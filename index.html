@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一纸书房 · 工具与笺</title>
+<meta name="description" content="一纸书房 —— 一些安静好用的小工具。同一生辰, 永出一笺。">
+<style>
+  :root{
+    --paper:#f5eeda; --ink:#2b2419; --ink2:#6b5f49;
+    --cinnabar:#a4342a; --teal:#2f4f52; --gold:#a07c1c;
+    --hairline:rgba(160,124,28,.45);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'KaiTi','STKaiti','Kaiti SC','STSong','SimSun',serif;
+    background:
+      radial-gradient(1100px 480px at 50% -120px, rgba(164,52,42,.14), transparent 60%),
+      radial-gradient(900px 700px at 50% 115%, rgba(160,124,28,.07), transparent 55%),
+      #191510;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:44px 16px 60px;
+    position:relative;overflow-x:hidden;
+  }
+  body::before{
+    content:'房';position:fixed;left:-5vw;bottom:2vh;z-index:0;pointer-events:none;
+    font-size:56vh;line-height:1;color:rgba(240,230,207,.02);
+    font-family:'KaiTi','STKaiti',serif;
+  }
+  .wrap{width:100%;max-width:720px;position:relative;z-index:1}
+
+  /* 头部 */
+  header{text-align:center;margin-bottom:40px}
+  .seal{
+    width:58px;height:58px;margin:0 auto 18px;
+    background:linear-gradient(145deg,#b03a2e,#8c2a21);
+    color:#f7efe0;border-radius:6px;
+    display:grid;grid-template-columns:1fr 1fr;place-items:center;
+    writing-mode:vertical-rl;font-size:20px;line-height:1;
+    transform:rotate(-3deg);
+    box-shadow:0 3px 10px rgba(0,0,0,.5), inset 0 0 0 2px rgba(247,239,224,.35), inset 0 0 0 4px #8c2a21;
+  }
+  h1{
+    font-size:42px;letter-spacing:14px;text-indent:14px;font-weight:600;
+    background:linear-gradient(180deg,#f6ecd2 30%,#d9c08a);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 2px 18px rgba(0,0,0,.35);
+  }
+  .sub{margin-top:12px;color:#b3a586;font-size:13.5px;letter-spacing:5px;text-indent:5px}
+  .orn{display:flex;align-items:center;justify-content:center;gap:12px;margin:18px auto 0}
+  .orn::before,.orn::after{content:'';height:1px;width:90px;
+    background:linear-gradient(90deg,transparent,var(--hairline))}
+  .orn::after{background:linear-gradient(90deg,var(--hairline),transparent)}
+  .orn i{font-style:normal;color:var(--gold);font-size:11px}
+
+  /* 工具卡 */
+  .shelf-title{
+    text-align:center;color:#b3a586;font-size:12.5px;letter-spacing:6px;text-indent:6px;
+    margin-bottom:18px;
+  }
+  .cards{display:flex;flex-direction:column;gap:16px}
+  .card{
+    display:flex;align-items:center;gap:18px;
+    background:linear-gradient(160deg,var(--paper),#eee2c6);
+    border:1px solid #cbb98e;border-radius:8px;
+    box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 0 50px rgba(158,120,50,.08);
+    padding:20px 22px;text-decoration:none;color:inherit;
+    transition:transform .15s ease, box-shadow .15s ease;
+    position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:'';position:absolute;inset:8px;pointer-events:none;border-radius:4px;
+    border:1px solid rgba(164,52,42,.25);
+  }
+  a.card:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.55)}
+  .card .icon{
+    flex:0 0 54px;height:54px;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;color:#f7efe0;
+    background:linear-gradient(145deg,#b03a2e,#8c2a21);
+    box-shadow:0 3px 8px rgba(0,0,0,.3), inset 0 0 0 2px rgba(247,239,224,.3);
+  }
+  .card .icon.teal{background:linear-gradient(145deg,#3a5e62,#2f4f52)}
+  .card .body{flex:1;min-width:0}
+  .card .name{font-size:19px;letter-spacing:3px;color:var(--ink)}
+  .card .name .st{
+    display:inline-block;margin-left:8px;padding:1px 8px;font-size:10.5px;letter-spacing:1px;
+    border-radius:10px;vertical-align:2px;
+  }
+  .st.live{background:rgba(90,114,71,.15);color:#5a7247;border:1px solid rgba(90,114,71,.4)}
+  .st.wip{background:rgba(160,124,28,.12);color:var(--gold);border:1px solid rgba(160,124,28,.4)}
+  .card .desc{margin-top:6px;font-size:13px;line-height:1.7;color:var(--ink2);letter-spacing:.5px}
+  .card .go{
+    flex:0 0 auto;color:var(--cinnabar);font-size:20px;
+    transition:transform .15s ease;
+  }
+  a.card:hover .go{transform:translateX(4px)}
+  .card.disabled{cursor:default;opacity:.72}
+  .card.disabled:hover{transform:none;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+
+  /* 页脚 */
+  footer{margin-top:44px;text-align:center}
+  footer .line{
+    font-size:12px;color:#8d8167;letter-spacing:2px;line-height:2;
+  }
+  footer .line b{color:#b3a586;font-weight:normal}
+  footer a{color:#b3a586;text-decoration:none;border-bottom:1px dashed rgba(179,165,134,.5)}
+  footer a:hover{color:#f0e6cf}
+
+  @media (max-width:520px){
+    h1{font-size:34px;letter-spacing:10px;text-indent:10px}
+    .card{padding:16px 16px;gap:14px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="seal">一纸书房</div>
+    <h1>一纸书房</h1>
+    <div class="sub">一些安静好用的小工具</div>
+    <div class="orn"><i>◆</i></div>
+  </header>
+
+  <div class="shelf-title">—— 架 上 工 具 ——</div>
+
+  <div class="cards">
+    <!-- 新增工具: 复制一个 <a class="card"> 改链接/名称/简介即可 -->
+    <a class="card" href="/fate/" target="_blank" rel="noopener">
+      <div class="icon">笺</div>
+      <div class="body">
+        <div class="name">一纸命笺 <span class="st live">已上线</span></div>
+        <div class="desc">干支五行命书生成。输入生辰, 落笺四柱五行与断语, 可存图分享。<br>同一生辰, 永出一笺 —— 断语由规则生成, 不随口而变。</div>
+      </div>
+      <div class="go">→</div>
+    </a>
+
+    <div class="card disabled">
+      <div class="icon teal">谱</div>
+      <div class="body">
+        <div class="name">一纸工谱 <span class="st wip">酝酿中</span></div>
+        <div class="desc">下一件器物还在打磨。书房的书, 一本一本添。</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="line">
+      书房主人 <b>王申慧</b> ·  Java 后端 / AI 工程化<br>
+      开源 · <a href="https://github.com/Dolo-w" target="_blank" rel="noopener">GitHub @Dolo-w</a>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
