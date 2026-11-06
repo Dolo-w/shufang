@@ -22,7 +22,7 @@
 <style>
   :root{
     --paper:#f5eeda; --paper2:#eee2c6; --ink:#2b2419; --ink2:#6b5f49;
-    --cinnabar:#a4342a; --gold:#a07c1c;
+    --cinnabar:#a4342a; --teal:#2f4f52; --gold:#a07c1c;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{
@@ -39,18 +39,55 @@
   .who{flex:1;background:rgba(245,238,218,.03);border:1px solid rgba(179,165,134,.22);border-radius:6px;padding:16px 14px}
   .who .t{font-size:12.5px;letter-spacing:3px;color:#c9b98f;margin-bottom:12px}
   .who label{display:block;font-size:11.5px;color:#8d8167;letter-spacing:1px;margin:10px 0 6px}
-  .who input[type=date], .who select{
+  .who select{
     width:100%;background:rgba(245,238,218,.04);border:1px solid rgba(179,165,134,.28);
     border-radius:4px;padding:9px 10px;color:#e6dcc4;font-family:inherit;font-size:13.5px;
   }
+
+  /* 国风日历盘 */
+  .dp{position:relative}
+  .dp-field{
+    width:100%;padding:9px 10px;font-family:inherit;font-size:13.5px;text-align:left;cursor:pointer;
+    color:#8d8167;letter-spacing:1px;background:rgba(245,238,218,.04);
+    border:1px solid rgba(179,165,134,.28);border-radius:4px;transition:border-color .15s;
+  }
+  .dp-field.filled{color:#e6dcc4}
+  .dp-field:hover,.dp-field:focus{border-color:rgba(179,165,134,.6);outline:none}
+  .dp-panel{
+    position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:9;
+    background:linear-gradient(160deg,var(--paper),var(--paper2));
+    border:1px solid #c9b785;border-radius:6px;padding:12px 12px 14px;
+    box-shadow:0 16px 40px rgba(0,0,0,.55);color:var(--ink);
+  }
+  .dp-head{display:flex;align-items:center;gap:4px;margin-bottom:10px}
+  .dp-title{flex:1;text-align:center;font-size:14px;color:var(--cinnabar);letter-spacing:2px}
+  .dp-nav{
+    width:28px;height:28px;border:1px solid #c9b785;border-radius:4px;cursor:pointer;
+    background:rgba(255,252,244,.85);font-family:inherit;color:var(--ink2);font-size:14px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .dp-nav:hover{border-color:var(--cinnabar);color:var(--cinnabar)}
+  .dp-week{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+  .dp-week span{text-align:center;font-size:10.5px;color:var(--teal)}
+  .dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .dp-day{
+    height:32px;padding:0;border:1px solid transparent;background:transparent;border-radius:4px;
+    font-family:inherit;font-size:13px;color:var(--ink);cursor:pointer;
+  }
+  .dp-day:hover{border-color:#c9b785;background:rgba(255,252,244,.95)}
+  .dp-day.on{background:linear-gradient(160deg,#b23c30,#8c2a21);color:#f8efdc;border-color:#8c2a21}
+  .dp-day.blank{visibility:hidden;pointer-events:none}
+
   .btns{display:flex;gap:10px;margin-top:18px}
   .btn{
     flex:1;background:transparent;border:1px solid rgba(179,165,134,.45);color:#c9b98f;
-    border-radius:4px;padding:12px 0;font-family:inherit;font-size:14px;letter-spacing:4px;
+    border-radius:4px;padding:12px 0;font-family:inherit;font-size:14px;letter-spacing:3px;
     cursor:pointer;transition:background .15s,color .15s;
   }
   .btn:hover{background:rgba(179,165,134,.12);color:#f0e6cf}
+  .btn:disabled{opacity:.35;cursor:default}
   .btn.ghost{color:#8d8167;border-color:rgba(179,165,134,.25)}
+
   .paper{
     margin-top:22px;display:none;
     background:linear-gradient(160deg,var(--paper) 60%,var(--paper2));
@@ -64,7 +101,7 @@
   .score .n{font-size:52px;color:var(--cinnabar);line-height:1;letter-spacing:2px}
   .score .u{font-size:12px;color:#8a7c5f;letter-spacing:3px;margin-top:8px}
   .score .cap{margin-top:12px;font-size:15px;color:#2b2419;letter-spacing:2px}
-  .pillars{display:flex;justify-content:center;gap:22px;margin-top:18px;font-size:13px;color:#6b5f49}
+  .pillars{display:flex;justify-content:center;gap:22px;margin-top:18px;font-size:13px;color:#6b5f49;flex-wrap:wrap}
   .pillars b{color:#2b2419;font-weight:600}
   .list{margin-top:20px;padding-top:16px;border-top:1px dashed #c2ae7f}
   .list .item{display:flex;gap:10px;margin-bottom:12px}
@@ -72,6 +109,9 @@
     background:rgba(164,52,42,.08);color:var(--cinnabar);font-size:11.5px}
   .list .v{flex:1;font-size:13px;line-height:1.9;color:#4a3f2f}
   .paper .disc{margin-top:14px;text-align:center;font-size:11px;color:#8a7c5f;letter-spacing:1px}
+  #posterBox{display:none;margin-top:18px;text-align:center}
+  #posterBox.on{display:block}
+  #posterCanvas{width:100%;max-width:320px;border:1px solid rgba(179,165,134,.3);border-radius:4px}
   .toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);
     background:rgba(35,29,20,.95);border:1px solid rgba(179,165,134,.35);color:#e6dcc4;
     padding:9px 18px;border-radius:4px;font-size:12.5px;letter-spacing:1px;opacity:0;
@@ -91,14 +131,20 @@
     <div class="who">
       <div class="t">甲 · 你</div>
       <label>出生日期</label>
-      <input type="date" id="aDate" min="1901-01-01" max="2026-12-31">
+      <div class="dp" id="aDp">
+        <button type="button" class="dp-field" id="aField">点选出生日期</button>
+        <input type="hidden" id="aDate" value="">
+      </div>
       <label>时辰</label>
       <select id="aHour"></select>
     </div>
     <div class="who">
       <div class="t">乙 · 对方</div>
       <label>出生日期</label>
-      <input type="date" id="bDate" min="1901-01-01" max="2026-12-31">
+      <div class="dp" id="bDp">
+        <button type="button" class="dp-field" id="bField">点选出生日期</button>
+        <input type="hidden" id="bDate" value="">
+      </div>
       <label>时辰</label>
       <select id="bHour"></select>
     </div>
@@ -106,7 +152,10 @@
 
   <div class="btns">
     <button class="btn" id="goBtn">合 一 笺</button>
-    <button class="btn ghost" id="copyBtn">复 制 结 论</button>
+  </div>
+  <div class="btns">
+    <button class="btn ghost" id="saveBtn" disabled>存 成 图 片</button>
+    <button class="btn ghost" id="linkBtn" disabled>复 制 链 接</button>
   </div>
 
   <div class="paper" id="paper">
@@ -119,6 +168,10 @@
     <div class="list" id="rList"></div>
     <div class="disc">仅供文化娱乐参考 · 相处在人不在盘</div>
   </div>
+
+  <div id="posterBox">
+    <canvas id="posterCanvas" width="750" height="1334"></canvas>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -130,24 +183,109 @@
   var ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
   var GAN_WX = ['木','木','火','火','土','土','金','金','水','水'];
   var ZHI_WX = ['水','土','木','木','土','火','火','土','金','金','土','水'];
-  var SHENGXIAO = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
   var HE = {子:'丑',丑:'子',寅:'亥',亥:'寅',卯:'戌',戌:'卯',辰:'酉',酉:'辰',巳:'申',申:'巳',午:'未',未:'午'};
   var CHONG = {子:'午',午:'子',丑:'未',未:'丑',寅:'申',申:'寅',卯:'酉',酉:'卯',辰:'戌',戌:'辰',巳:'亥',亥:'巳'};
   var HAI = {子:'未',未:'子',丑:'午',午:'丑',寅:'巳',巳:'寅',卯:'辰',辰:'卯',申:'亥',亥:'申',酉:'戌',戌:'酉'};
   var XING = {子:'卯',卯:'子',寅:'巳',巳:'申',申:'寅',丑:'戌',戌:'未',未:'丑'};
   var SANHE = [['申','子','辰'],['亥','卯','未'],['寅','午','戌'],['巳','酉','丑']];
   var WUHE = {甲:'己',己:'甲',乙:'庚',庚:'乙',丙:'辛',辛:'丙',丁:'壬',壬:'丁',戊:'癸',癸:'戊'};
-
-  function el(id){ return document.getElementById(id); }
-
-  // 时辰下拉
   var HOURS = [['-1','不知时辰'],['0','子时 23–01'],['1','丑时 01–03'],['2','寅时 03–05'],['3','卯时 05–07'],
     ['4','辰时 07–09'],['5','巳时 09–11'],['6','午时 11–13'],['7','未时 13–15'],['8','申时 15–17'],
     ['9','酉时 17–19'],['10','戌时 19–21'],['11','亥时 21–23']];
+
+  function el(id){ return document.getElementById(id); }
+  function toast(msg){
+    var t = el('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove('show'); }, 2000);
+  }
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+
+  /* ---------- 国风日历盘 ---------- */
+  function initPicker(fieldId, inputId){
+    var field = el(fieldId), input = el(inputId), wrap = field.parentNode;
+    var panel = document.createElement('div');
+    panel.className = 'dp-panel'; panel.hidden = true;
+    panel.innerHTML =
+      '<div class="dp-head">' +
+        '<button type="button" class="dp-nav" data-nav="py">‹‹</button>' +
+        '<button type="button" class="dp-nav" data-nav="pm">‹</button>' +
+        '<div class="dp-title"></div>' +
+        '<button type="button" class="dp-nav" data-nav="nm">›</button>' +
+        '<button type="button" class="dp-nav" data-nav="ny">››</button>' +
+      '</div>' +
+      '<div class="dp-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>' +
+      '<div class="dp-days"></div>';
+    wrap.appendChild(panel);
+
+    var today = new Date();
+    var view = { y: today.getFullYear(), m: today.getMonth() }; // m: 0-11
+    var MIN = 1901, MAX = 2026;
+
+    function render(){
+      panel.querySelector('.dp-title').textContent = view.y + ' 年 ' + (view.m + 1) + ' 月';
+      var first = new Date(view.y, view.m, 1).getDay();
+      var days = new Date(view.y, view.m + 1, 0).getDate();
+      var html = '';
+      for(var i=0;i<first;i++) html += '<button type="button" class="dp-day blank"></button>';
+      var sel = input.value || '';
+      for(var d=1; d<=days; d++){
+        var v = view.y + '-' + pad(view.m+1) + '-' + pad(d);
+        html += '<button type="button" class="dp-day' + (v === sel ? ' on' : '') + '" data-v="' + v + '">' + d + '</button>';
+      }
+      panel.querySelector('.dp-days').innerHTML = html;
+    }
+
+    function open(){
+      var v = input.value;
+      if(v){ var p = v.split('-').map(Number); view.y = p[0]; view.m = p[1] - 1; }
+      render(); panel.hidden = false;
+    }
+    function close(){ panel.hidden = true; }
+
+    field.addEventListener('click', function(e){
+      e.stopPropagation();
+      panel.hidden ? open() : close();
+    });
+    panel.addEventListener('click', function(e){
+      e.stopPropagation();
+      var nav = e.target.closest('[data-nav]');
+      if(nav){
+        var k = nav.getAttribute('data-nav');
+        if(k === 'pm'){ view.m--; if(view.m < 0){ view.m = 11; view.y--; } }
+        if(k === 'nm'){ view.m++; if(view.m > 11){ view.m = 0; view.y++; } }
+        if(k === 'py') view.y--;
+        if(k === 'ny') view.y++;
+        if(view.y < MIN) view.y = MIN;
+        if(view.y > MAX) view.y = MAX;
+        render(); return;
+      }
+      var day = e.target.closest('.dp-day[data-v]');
+      if(day){
+        input.value = day.getAttribute('data-v');
+        var p = input.value.split('-').map(Number);
+        field.textContent = p[0] + ' 年 ' + p[1] + ' 月 ' + p[2] + ' 日';
+        field.classList.add('filled');
+        close();
+      }
+    });
+    document.addEventListener('click', function(){ close(); });
+    return { set: function(v){
+      input.value = v;
+      var p = v.split('-').map(Number);
+      field.textContent = p[0] + ' 年 ' + p[1] + ' 月 ' + p[2] + ' 日';
+      field.classList.add('filled');
+    }};
+  }
+
+  var pickA = initPicker('aField', 'aDate');
+  var pickB = initPicker('bField', 'bDate');
+
+  HOURS.forEach(function(h){ /* noop */ });
   ['aHour','bHour'].forEach(function(id){
     el(id).innerHTML = HOURS.map(function(h){ return '<option value="'+h[0]+'">'+h[1]+'</option>'; }).join('');
   });
 
+  /* ---------- 排盘与合婚 ---------- */
   function person(dateVal, hourSel){
     var p = dateVal.split('-').map(Number);
     var known = hourSel >= 0;
@@ -169,7 +307,6 @@
     });
     return c;
   }
-
   function zhiRel(a,b){
     if(HE[a] === b) return { k:'合', s:+16, t:'日支六合：两家气场对得上，遇事容易商量到一处。' };
     for(var i=0;i<SANHE.length;i++){ if(SANHE[i].indexOf(a)>=0 && SANHE[i].indexOf(b)>=0) return { k:'三合', s:+11, t:'日支三合：相处有默契，做同一件事不容易互相拖后腿。' }; }
@@ -178,29 +315,14 @@
     if(XING[a] === b) return { k:'刑', s:-7, t:'日支相刑：容易在同一个点上反复较劲，别争输赢。' };
     return { k:'平', s:+2, t:'日支无冲无合：不靠命定的吸引，靠相处攒出来的情分。' };
   }
+  function weakest(c){ var w='木', v=99; ['木','火','土','金','水'].forEach(function(k){ if(c[k] < v){ v=c[k]; w=k; } }); return w; }
 
-  function weakest(c){
-    var w='木', v=99;
-    ['木','火','土','金','水'].forEach(function(k){ if(c[k] < v){ v = c[k]; w = k; } });
-    return w;
-  }
-  function strongest(c){
-    var s='木', v=-1;
-    ['木','火','土','金','水'].forEach(function(k){ if(c[k] > v){ v = c[k]; s = k; } });
-    return s;
-  }
+  var lastText = '', lastData = null;
 
-  function toast(msg){
-    var t = el('toast'); t.textContent = msg; t.classList.add('show');
-    clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove('show'); }, 2000);
-  }
-
-  var lastText = '';
-
-  el('goBtn').addEventListener('click', function(){
+  function computeAll(){
     var aD = el('aDate').value, bD = el('bDate').value;
-    if(!aD || !bD){ toast('两个人的生日都要填'); return; }
-    if(typeof Solar === 'undefined'){ toast('排盘引擎未载入，刷新重试'); return; }
+    if(!aD || !bD){ toast('两个人的生日都要选'); return null; }
+    if(typeof Solar === 'undefined'){ toast('排盘引擎未载入，刷新重试'); return null; }
 
     var A = person(aD, parseInt(el('aHour').value, 10));
     var B = person(bD, parseInt(el('bHour').value, 10));
@@ -209,7 +331,6 @@
     var score = 62 + rel.s;
     var notes = [];
 
-    // 日干五合
     if(WUHE[A.gz.day[0]] === B.gz.day[0]){
       score += 12;
       notes.push({k:'干', v:'日干相合：两个人的心气能对上，很多话不用解释。'});
@@ -217,21 +338,17 @@
       notes.push({k:'干', v:'日干不合不冲：谈不上天雷地火，也谈不上互相消耗。'});
     }
 
-    // 生肖
     var sa = A.gz.year[1], sb = B.gz.year[1];
-    if(HE[sa] === sb){ score += 6; }
-    else if(CHONG[sa] === sb){ score -= 6; }
+    if(HE[sa] === sb) score += 6;
+    else if(CHONG[sa] === sb) score -= 6;
 
-    // 五行互补
     var ca = wxCount(A), cb = wxCount(B);
     var wa = weakest(ca), wb = weakest(cb);
-    var sa2 = strongest(ca), sb2 = strongest(cb);
     if(cb[wa] >= 2){ score += 7; notes.push({k:'补', v:'你八字的「'+wa+'」偏少，对方盘里恰好「'+wa+'」不弱——这一块能补上。'}); }
     else if(ca[wb] >= 2){ score += 7; notes.push({k:'补', v:'对方八字的「'+wb+'」偏少，你盘里「'+wb+'」不弱——你能给的那一块，正好是他缺的。'}); }
     else { notes.push({k:'补', v:'两个人的五行分布比较接近，谈不上互补，也谈不上互相拖累。'}); }
 
     notes.unshift({k:'柱', v:rel.t + '（' + A.gz.day + ' × ' + B.gz.day + '）'});
-
     score = Math.max(40, Math.min(96, Math.round(score)));
 
     var cap, extra;
@@ -241,34 +358,152 @@
     else if(score >= 55){ cap = '需要磨合'; extra = '差异不小，但不是不能过；把规矩和边界定在前面，比讲感情管用。'; }
     else { cap = '差异较大'; extra = '两个盘的路子差得远，能不能走长，看愿不愿意各让一步。'; }
 
-    el('rScore').textContent = score;
-    el('rCap').textContent = cap + ' · ' + extra;
-    el('rPillars').innerHTML =
-      '<div>甲 <b>' + A.gz.year + ' ' + A.gz.month + ' ' + A.gz.day + '</b>' + (A.gz.time ? ' ' + A.gz.time : ' (无时柱)') + '</div>' +
-      '<div>乙 <b>' + B.gz.year + ' ' + B.gz.month + ' ' + B.gz.day + '</b>' + (B.gz.time ? ' ' + B.gz.time : ' (无时柱)') + '</div>';
+    return { A:A, B:B, rel:rel, score:score, cap:cap, extra:extra, notes:notes };
+  }
 
-    el('rList').innerHTML = notes.map(function(n){
+  function showResult(D){
+    el('rScore').textContent = D.score;
+    el('rCap').textContent = D.cap + ' · ' + D.extra;
+    el('rPillars').innerHTML =
+      '<div>甲 <b>' + D.A.gz.year + ' ' + D.A.gz.month + ' ' + D.A.gz.day + '</b>' + (D.A.gz.time ? ' ' + D.A.gz.time : ' (无时柱)') + '</div>' +
+      '<div>乙 <b>' + D.B.gz.year + ' ' + D.B.gz.month + ' ' + D.B.gz.day + '</b>' + (D.B.gz.time ? ' ' + D.B.gz.time : ' (无时柱)') + '</div>';
+    el('rList').innerHTML = D.notes.map(function(n){
       return '<div class="item"><div class="k">'+n.k+'</div><div class="v">'+n.v+'</div></div>';
-    }).join('') + '<div class="item"><div class="k">议</div><div class="v">'+extra+'</div></div>';
+    }).join('') + '<div class="item"><div class="k">议</div><div class="v">'+D.extra+'</div></div>';
 
     el('paper').classList.add('on');
+    el('saveBtn').disabled = false;
+    el('linkBtn').disabled = false;
     el('paper').scrollIntoView({behavior:'smooth', block:'nearest'});
 
-    lastText = '一纸合婚｜甲 ' + A.gz.year + ' ' + A.gz.month + ' ' + A.gz.day
-      + ' × 乙 ' + B.gz.year + ' ' + B.gz.month + ' ' + B.gz.day
-      + '｜' + cap + ' ' + score + ' 分｜' + rel.t + '｜一纸书房 dolow.dev';
+    lastText = '一纸合婚｜甲 ' + D.A.gz.year + ' ' + D.A.gz.month + ' ' + D.A.gz.day
+      + ' × 乙 ' + D.B.gz.year + ' ' + D.B.gz.month + ' ' + D.B.gz.day
+      + '｜' + D.cap + ' ' + D.score + ' 分｜' + D.rel.t + '｜一纸书房 dolow.dev';
+    lastData = D;
+  }
+
+  function syncUrl(){
+    var q = '?a=' + el('aDate').value + '&ah=' + el('aHour').value
+          + '&b=' + el('bDate').value + '&bh=' + el('bHour').value;
+    try{ history.replaceState(null, '', '/he/' + q); }catch(e){}
+  }
+
+  el('goBtn').addEventListener('click', function(){
+    var D = computeAll();
+    if(!D) return;
+    showResult(D);
+    syncUrl();
+    drawPoster(D);
   });
 
-  el('copyBtn').addEventListener('click', function(){
-    if(!lastText){ toast('先合一笺'); return; }
+  el('linkBtn').addEventListener('click', function(){
+    var url = location.origin + '/he/?a=' + el('aDate').value + '&ah=' + el('aHour').value
+            + '&b=' + el('bDate').value + '&bh=' + el('bHour').value;
     if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(lastText).then(function(){ toast('已复制'); }, function(){ toast('复制失败'); });
-    } else {
-      var ta = document.createElement('textarea'); ta.value = lastText; document.body.appendChild(ta);
-      ta.select(); try{ document.execCommand('copy'); toast('已复制'); }catch(e){ toast('复制失败'); }
-      document.body.removeChild(ta);
-    }
+      navigator.clipboard.writeText(url).then(function(){ toast('链接已复制'); }, function(){ toast('复制失败'); });
+    } else { toast(url); }
   });
+
+  el('saveBtn').addEventListener('click', function(){
+    if(!lastData){ toast('先合一笺'); return; }
+    drawPoster(lastData);
+    var cv = el('posterCanvas');
+    var a = document.createElement('a');
+    a.download = '一纸合婚_' + lastData.A.gz.day + '_' + lastData.B.gz.day + '.png';
+    a.href = cv.toDataURL('image/png');
+    a.click();
+    toast('已存图');
+  });
+
+  /* ---------- 海报 ---------- */
+  function wrapLines(ctx, text, maxW){
+    var lines = [], cur = '';
+    for(var i=0;i<text.length;i++){
+      var t = cur + text[i];
+      if(ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = text[i]; }
+      else cur = t;
+    }
+    if(cur) lines.push(cur);
+    return lines;
+  }
+
+  function drawPoster(D){
+    var cv = el('posterCanvas'), ctx = cv.getContext('2d');
+    var W = 750, KAI = 'KaiTi, STKaiti, "Kaiti SC", STSong, SimSun, serif';
+
+    ctx.fillStyle = '#f5eeda'; ctx.fillRect(0,0,W,1334);
+    var g = ctx.createLinearGradient(0,0,W,1334);
+    g.addColorStop(0,'#f7f0df'); g.addColorStop(1,'#eadfc4');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,1334);
+    ctx.strokeStyle = 'rgba(164,52,42,.45)'; ctx.lineWidth = 2;
+    ctx.strokeRect(28,28,W-56,1334-56);
+
+    // 印章
+    ctx.fillStyle = '#a4342a';
+    ctx.fillRect(W/2-34, 84, 68, 68);
+    ctx.fillStyle = '#f7efe0'; ctx.font = '30px ' + KAI; ctx.textAlign = 'center';
+    ctx.fillText('合', W/2, 130);
+
+    ctx.fillStyle = '#2b2419'; ctx.font = '600 52px ' + KAI;
+    ctx.fillText('一 纸 合 婚', W/2, 228);
+    ctx.fillStyle = '#8a7c5f'; ctx.font = '24px ' + KAI;
+    ctx.fillText('两人生辰 · 合成一笺', W/2, 274);
+
+    // 双方四柱
+    ctx.fillStyle = '#6b5f49'; ctx.font = '26px ' + KAI;
+    ctx.fillText('甲  ' + D.A.gz.year + ' ' + D.A.gz.month + ' ' + D.A.gz.day + (D.A.gz.time ? ' ' + D.A.gz.time : ''), W/2, 344);
+    ctx.fillText('乙  ' + D.B.gz.year + ' ' + D.B.gz.month + ' ' + D.B.gz.day + (D.B.gz.time ? ' ' + D.B.gz.time : ''), W/2, 386);
+
+    // 分数
+    ctx.fillStyle = '#a4342a'; ctx.font = '150px ' + KAI;
+    ctx.fillText(String(D.score), W/2, 556);
+    ctx.fillStyle = '#8a7c5f'; ctx.font = '24px ' + KAI;
+    ctx.fillText('合 婚 参 考 分', W/2, 602);
+
+    ctx.fillStyle = '#2b2419'; ctx.font = '38px ' + KAI;
+    ctx.fillText(D.cap, W/2, 676);
+
+    // 断语
+    ctx.textAlign = 'left';
+    var y = 742;
+    ctx.font = '24px ' + KAI;
+    D.notes.slice(0, 3).forEach(function(n){
+      var lines = wrapLines(ctx, n.v, W - 170);
+      lines.slice(0,3).forEach(function(l){
+        ctx.fillStyle = '#4a3f2f';
+        ctx.fillText(l, 85, y);
+        y += 40;
+      });
+      y += 10;
+    });
+
+    // 中缝
+    ctx.textAlign = 'center';
+    ctx.strokeStyle = 'rgba(160,124,28,.35)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(200, 1100); ctx.lineTo(W - 200, 1100); ctx.stroke();
+    ctx.fillStyle = '#8a7c5f'; ctx.font = '22px ' + KAI;
+    ctx.fillText('同一对生辰 · 永出同一笺', W/2, 1148);
+
+    // 底
+    ctx.fillStyle = '#8a7c5f'; ctx.font = '20px ' + KAI;
+    ctx.fillText('仅供文化娱乐参考 · 相处在人不在盘', W/2, 1240);
+    ctx.fillStyle = '#a89a79'; ctx.font = '18px ' + KAI;
+    ctx.fillText('一纸书房 · dolow.dev', W/2, 1278);
+
+    el('posterBox').classList.add('on');
+  }
+
+  /* ---------- 链接回放 ---------- */
+  (function restore(){
+    var q = new URLSearchParams(location.search);
+    var a = q.get('a'), b = q.get('b');
+    if(!a || !b) return;
+    if(q.get('ah') !== null) el('aHour').value = q.get('ah');
+    if(q.get('bh') !== null) el('bHour').value = q.get('bh');
+    pickA.set(a); pickB.set(b);
+    var D = computeAll();
+    if(D){ showResult(D); drawPoster(D); }
+  })();
 })();
 </script>
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
