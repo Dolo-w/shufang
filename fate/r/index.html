@@ -307,8 +307,11 @@
     }catch(e){}
   }
 
+  var tl = Solar.fromDate(new Date()).getLunar();
   el('rFoot').innerHTML = '日柱纳音 ' + ec.getDayNaYin() + ' · 年柱纳音 ' + ec.getYearNaYin()
-    + '<br>同一生辰, 永出一笺 · 断语由规则生成';
+    + '<br>' + (n ? n + ' 亲览 · ' : '') + '岁次' + tl.getYearInGanZhiByLiChun() + '年 '
+    + tl.getMonthInChinese() + '月' + tl.getDayInChinese() + '日 · 一纸命笺 谨制'
+    + '<br><span style="font-size:10.5px;color:#b6a883">本笺取材干支五行传统 · 仅供文化娱乐参考</span>';
 
   el('content').style.display = 'block';
 

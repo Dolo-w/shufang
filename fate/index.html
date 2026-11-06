@@ -337,8 +337,9 @@
     flex:1;font-size:15px;line-height:1.85;color:#544c3b;padding-top:2px;
   }
   .disc{
-    margin-top:22px;font-size:11.5px;color:#a89a79;text-align:center;letter-spacing:1px;line-height:1.7;
+    margin-top:22px;font-size:11.5px;color:#a89a79;text-align:center;letter-spacing:1px;line-height:1.9;
   }
+  .disc .disc-sub{display:block;margin-top:6px;font-size:10.5px;color:#b6a883;letter-spacing:.5px}
 
   /* 海报预览 */
   #posterBox{display:none;margin-top:34px;text-align:center}
@@ -463,7 +464,7 @@
       <div class="main" id="rMain"></div>
       <div class="trio" id="rTrio"></div>
     </div>
-    <div class="disc">同一生辰, 永出一笺 —— 断语由规则生成, 不随口而变</div>
+    <div class="disc" id="rDisc"></div>
     <div class="skins" id="skinRow">
       <span class="skins-t">笺纸</span>
       <button type="button" class="skin on" data-skin="plain">素笺</button>
@@ -9359,6 +9360,15 @@ function render(R){
 
   box.scrollIntoView({behavior:'smooth'});
   window._R = R; // 供海报用
+
+  // 落款: 姓名 亲览 · 岁次干支 · 一纸命笺 谨制
+  try {
+    const tl = L.Solar.fromDate(new Date()).getLunar();
+    const namePart = R.name ? R.name + ' 亲览 · ' : '';
+    document.getElementById('rDisc').innerHTML =
+      namePart + '岁次' + tl.getYearInGanZhiByLiChun() + '年 ' + tl.getMonthInChinese() + '月' + tl.getDayInChinese() + '日 · 一纸命笺 谨制'
+      + '<span class="disc-sub">本笺取材干支五行传统 · 仅供文化娱乐参考</span>';
+  } catch(e) {}
 }
 
 /* ---------- 海报(canvas 750x1334) ---------- */
