@@ -340,11 +340,6 @@
   @media (prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
   }
-  /* 来由 */
-  .about{margin-top:26px;padding:0 6px;text-align:left}
-  .about-t{color:#b3a586;font-size:12.5px;letter-spacing:4px;margin-bottom:10px}
-  .about p{color:#8d8167;font-size:12.5px;line-height:2;letter-spacing:.3px;margin-bottom:8px}
-  .about a{color:#b3a586;text-decoration:none;border-bottom:1px dashed rgba(179,165,134,.5)}
 </style>
 </head>
 <body>
@@ -449,12 +444,6 @@
   <div id="againBox">
     <button class="btn ghost" style="width:100%" onclick="resetAll()">再 算 一 笺</button>
   </div>
-
-  <section class="about">
-    <div class="about-t">这个工具怎么来的</div>
-    <p>命笺最初是给自己玩的：想验证「同一个生辰，能不能永远给出同一张笺」。所以断语全部写在规则里，不用随机数、也没让模型开口——生辰一样，结果就一样。</p>
-    <p>排盘用 lunar-javascript，断语是手写的规则表；所有计算都在你的浏览器里完成，不上传、不留存。</p>
-  </section>
 </div>
 
 <div class="toast" id="toast"></div>
