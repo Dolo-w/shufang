@@ -6,6 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>一纸书房 · 工具与笺</title>
 <meta name="description" content="一纸书房 —— 一些安静好用的小工具。同一生辰, 永出一笺。">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#191510">
+<link rel="canonical" href="https://dolow.dev/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"一纸书房","url":"https://dolow.dev/","description":"一些安静好用的小工具。同一生辰，永出一笺。","inLanguage":"zh-CN"}
+</script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="一纸书房">
 <meta property="og:title" content="一纸书房 · 工具与笺">
@@ -128,6 +137,13 @@
     .card{padding:16px 16px;gap:14px}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  /* 来由 */
+  .about{margin-top:46px;padding-top:26px;border-top:1px solid rgba(160,124,28,.18);text-align:left}
+  .about-t{color:#c9b98f;font-size:13px;letter-spacing:4px;margin-bottom:12px}
+  .about p{color:#8d8167;font-size:13px;line-height:2.1;letter-spacing:.5px;margin-bottom:10px}
+  .about a{color:#b3a586;text-decoration:none;border-bottom:1px dashed rgba(179,165,134,.5)}
+  .about a:hover{color:#f0e6cf}
 </style>
 </head>
 <body>
@@ -160,6 +176,12 @@
       </div>
     </div>
   </div>
+
+  <section class="about">
+    <div class="about-t">这个工具怎么来的</div>
+    <p>命笺最初是给自己玩的：想验证「同一个生辰，能不能永远给出同一张笺」。所以断语全部写在规则里，不用随机数、也没让模型开口——生辰一样，结果就一样。</p>
+    <p>这里的东西都尽量做到「打开就能用、数据不出浏览器」。源码和做过的取舍都放在 <a href="https://github.com/Dolo-w/shufang" target="_blank" rel="noopener">GitHub</a>。</p>
+  </section>
 </div>
 </body>
 </html>
