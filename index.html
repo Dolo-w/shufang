@@ -137,7 +137,8 @@
     .card{padding:16px 16px;gap:14px}
   }
   /* 订阅 */
-  .sub{display:flex;gap:8px;margin:34px auto 0;max-width:420px;width:100%}
+  .closing{margin:40px auto 0;text-align:center;font-size:13.5px;color:#b3a586;letter-spacing:7px;text-indent:7px;opacity:.9}
+  .sub{display:flex;gap:8px;margin:26px auto 0;max-width:420px;width:100%}
   .sub input{
     flex:1;min-width:0;background:rgba(245,238,218,.04);border:1px solid rgba(179,165,134,.28);
     border-radius:4px;padding:10px 12px;color:#e6dcc4;font-family:inherit;font-size:13px;
@@ -174,7 +175,7 @@
       <div class="icon">笺</div>
       <div class="body">
         <div class="name">一纸命笺 <span class="st live">已上线</span></div>
-        <div class="desc">干支五行命书生成。输入生辰, 落笺四柱五行、大运流年与断语, 可存图分享。<br>同一生辰, 永出一笺 —— 断语由规则生成, 不随口而变。</div>
+        <div class="desc">干支五行命书生成。输入生辰，落笺四柱五行、大运流年与断语，可存图分享。</div>
       </div>
       <div class="go">→</div>
     </a>
@@ -183,7 +184,7 @@
       <div class="icon teal">签</div>
       <div class="body">
         <div class="name">一纸日签 <span class="st live">已上线</span></div>
-        <div class="desc">按你的生辰与今日干支，出今日一签：宜什么、忌什么。<br>同一人同一天，永远是同一签。</div>
+        <div class="desc">按你的生辰与今日干支，出今日一签：宜什么、忌什么。</div>
       </div>
       <div class="go">→</div>
     </a>
@@ -192,7 +193,7 @@
       <div class="icon">合</div>
       <div class="body">
         <div class="name">一纸合婚 <span class="st live">已上线</span></div>
-        <div class="desc">两人生辰合成一笺：日柱合冲、五行互补、相处提示。<br>同一对生辰，永出同一结论。</div>
+        <div class="desc">两人生辰合成一笺：日柱合冲、五行互补、相处提示。</div>
       </div>
       <div class="go">→</div>
     </a>
@@ -205,6 +206,8 @@
       </div>
     </div>
   </div>
+
+  <div class="closing">书房无所有，聊赠一纸春</div>
 
   <form class="sub" id="subForm" method="post" action="/api/subscribe">
     <input type="email" name="email" placeholder="留个邮箱，有新工具时告诉你" autocomplete="email" required>
