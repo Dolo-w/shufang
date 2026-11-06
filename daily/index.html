@@ -118,6 +118,11 @@
     padding:9px 18px;border-radius:4px;font-size:12.5px;letter-spacing:1px;opacity:0;
     transition:opacity .2s,transform .2s;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* 手机存图兜底 */
+  #imgTip{position:fixed;inset:0;z-index:9999;background:rgba(10,8,5,.95);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+  #imgTip img{max-width:94vw;max-height:76vh;border-radius:4px;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+  #imgTip .tip{margin-top:14px;color:#e6dcc4;font-size:13px;letter-spacing:3px}
+  #imgTip button{margin-top:16px;padding:9px 28px;background:transparent;border:1px solid rgba(179,165,134,.5);color:#c9b98f;border-radius:4px;font-family:inherit;font-size:13px;letter-spacing:3px}
   @media (max-width:420px){ .cols{flex-direction:column;gap:14px} }
 </style>
 </head>
@@ -163,6 +168,11 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="imgTip">
+  <img id="imgTipImg" alt="签">
+  <div class="tip">长按图片 · 保存到相册</div>
+  <button id="imgTipClose">关 闭</button>
+</div>
 
 <script>
 (function(){
@@ -477,12 +487,38 @@
     if(!window._daily){ toast('先起一签'); return; }
     drawDailyPoster();
     el('posterBox').classList.add('on');
+    saveCanvas(el('posterCanvas'), '一纸日签_' + window._daily.dateStr + '.png');
+  });
+
+  function saveCanvas(cv, filename){
+    var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if(isMobile && cv.toBlob){
+      cv.toBlob(function(blob){
+        try {
+          var file = new File([blob], filename, { type: 'image/png' });
+          if(navigator.canShare && navigator.canShare({ files: [file] })){
+            navigator.share({ files: [file], title: filename }).catch(function(){
+              showImageTip(cv.toDataURL('image/png'));
+            });
+            return;
+          }
+        } catch(e) {}
+        showImageTip(cv.toDataURL('image/png'));
+      }, 'image/png');
+      return;
+    }
     var a = document.createElement('a');
-    a.download = '一纸日签_' + window._daily.dateStr + '.png';
-    a.href = el('posterCanvas').toDataURL('image/png');
+    a.download = filename;
+    a.href = cv.toDataURL('image/png');
     a.click();
     toast('已存图');
-  });
+  }
+
+  function showImageTip(src){
+    el('imgTipImg').src = src;
+    el('imgTip').style.display = 'flex';
+  }
+  el('imgTipClose').addEventListener('click', function(){ el('imgTip').style.display = 'none'; });
 
   el('linkBtn').addEventListener('click', function(){
     if(!birth){ toast('先填生辰'); return; }
@@ -497,4 +533,5 @@
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
 

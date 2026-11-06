@@ -358,6 +358,12 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  /* 手机存图兜底 */
+  #imgTip{position:fixed;inset:0;z-index:9999;background:rgba(10,8,5,.95);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+  #imgTip img{max-width:94vw;max-height:76vh;border-radius:4px;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+  #imgTip .tip{margin-top:14px;color:#e6dcc4;font-size:13px;letter-spacing:3px}
+  #imgTip button{margin-top:16px;padding:9px 28px;background:transparent;border:1px solid rgba(179,165,134,.5);color:#c9b98f;border-radius:4px;font-family:inherit;font-size:13px;letter-spacing:3px}
+
   @media (max-width:420px){
     .masthead h1{font-size:36px;letter-spacing:12px;text-indent:12px}
     .bazi-grid{gap:10px}
@@ -486,6 +492,12 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div id="imgTip">
+  <img id="imgTipImg" alt="命笺">
+  <div class="tip">长按图片 · 保存到相册</div>
+  <button id="imgTipClose">关 闭</button>
+</div>
 
 <script>
 /* lunar-javascript v1.7.7 (MIT License, 6tail) —— 排盘引擎, 完整内联以保证单文件可用
@@ -9688,11 +9700,41 @@ document.getElementById('shareBtn').addEventListener('click', () => {
 document.getElementById('downloadBtn').addEventListener('click', () => {
   if(!window._posterDrawn) drawPoster();
   const cv = document.getElementById('posterCanvas');
+  saveCanvas(cv, '一纸命笺_' + (window._R.name || window._R.solar.toYmd()) + '.png');
+});
+
+/* 存图: 手机优先走系统分享面板, 不支持时给「长按保存」的图 */
+function saveCanvas(cv, filename){
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if(isMobile && cv.toBlob){
+    cv.toBlob(function(blob){
+      try {
+        const file = new File([blob], filename, { type: 'image/png' });
+        if(navigator.canShare && navigator.canShare({ files: [file] })){
+          navigator.share({ files: [file], title: filename }).catch(function(){
+            showImageTip(cv.toDataURL('image/png'));
+          });
+          return;
+        }
+      } catch(e) {}
+      showImageTip(cv.toDataURL('image/png'));
+    }, 'image/png');
+    return;
+  }
   const a = document.createElement('a');
-  a.download = '一纸命笺_' + (window._R.name || window._R.solar.toYmd()) + '.png';
+  a.download = filename;
   a.href = cv.toDataURL('image/png');
   a.click();
   showToast('已存图, 可直接分享');
+}
+
+function showImageTip(src){
+  const box = document.getElementById('imgTip');
+  document.getElementById('imgTipImg').src = src;
+  box.style.display = 'flex';
+}
+document.getElementById('imgTipClose').addEventListener('click', function(){
+  document.getElementById('imgTip').style.display = 'none';
 });
 
 function resetAll(){
