@@ -463,11 +463,13 @@
     ctx.fillText('dolow.dev/daily', 80, 1196);
 
     if(qrImg.complete && qrImg.naturalWidth){
-      ctx.fillStyle='#fff'; ctx.fillRect(W-250, 1070, 150, 150);
-      ctx.drawImage(qrImg, W-244, 1076, 138, 138);
-      ctx.textAlign='center';
-      ctx.fillStyle='#8a7c5f'; ctx.font='17px '+KAI;
-      ctx.fillText('扫码 · 看你今日一签', W-175, 1248);
+      var qs2 = 96, qx2 = W - 96 - qs2, qy2 = 1080;
+      ctx.strokeStyle = 'rgba(160,124,28,.55)'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(qx2 - 7, qy2 - 7, qs2 + 14, qs2 + 14);
+      ctx.drawImage(qrImg, qx2, qy2, qs2, qs2);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#8a7c5f'; ctx.font = '16px ' + KAI;
+      '扫码看签'.split('').forEach(function(ch, i){ ctx.fillText(ch, qx2 - 30, qy2 + 10 + i * 19); });
     }
   }
 
@@ -495,3 +497,4 @@
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+

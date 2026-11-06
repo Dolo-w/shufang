@@ -9412,9 +9412,7 @@ function drawPoster(){
   let ty = by;
   triLines.forEach(lns => { by += lns.length*34 + 10; });
   const footY = Math.max(1240, by + 76);
-  const qrSize = 120;
-  const qrY = footY + 70;
-  H = Math.max(1334, qrY + qrSize + 58);
+  H = Math.max(1334, footY + 200);
   cv.height = H;                            // 增高会清空画布, 必须在动笔之前
 
   // 纸底
@@ -9541,26 +9539,23 @@ function drawPoster(){
     ty2 += triLines[i].length*34 + 10;
   });
 
-  // ===== 落款区 =====
+  // ===== 落款(左) + 二维码(右下) =====
   const today = L.Solar.fromDate(new Date()).getLunar();
+  ctx.textAlign = 'left';
   ctx.fillStyle = '#6b5f49'; ctx.font = '21px ' + KAI;
   const namePart = R.name ? R.name+' 亲览 · ' : '';
-  ctx.fillText(namePart + '岁次' + today.getYearInGanZhiByLiChun() + '年 ' + today.getMonthInChinese()+'月'+today.getDayInChinese()+'日 · 一纸命笺 谨制', W/2, footY);
-  if(WATERMARK){
-    ctx.fillStyle = '#a4342a'; ctx.font = '22px ' + KAI;
-    ctx.fillText(WATERMARK, W/2, footY+30);
-  } else {
-    ctx.fillStyle = '#a89a79'; ctx.font = '17px ' + KAI;
-    ctx.fillText('本笺取材干支五行传统 · 仅供文化娱乐参考', W/2, footY+32);
-  }
+  ctx.fillText(namePart + '岁次' + today.getYearInGanZhiByLiChun() + '年 ' + today.getMonthInChinese()+'月'+today.getDayInChinese()+'日 · 一纸命笺 谨制', 66, footY);
+  ctx.fillStyle = '#a89a79'; ctx.font = '16px ' + KAI;
+  ctx.fillText(WATERMARK || '本笺取材干支五行传统 · 仅供文化娱乐参考', 66, footY+30);
 
-  // 引流二维码
+  // 墨色二维码, 直接印在纸上, 不压白底
   if(qrFate.complete && qrFate.naturalWidth){
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(W/2 - qrSize/2 - 5, qrY - 5, qrSize + 10, qrSize + 10);
-    ctx.drawImage(qrFate, W/2 - qrSize/2, qrY, qrSize, qrSize);
-    ctx.fillStyle = '#8a7c5f'; ctx.font = '17px ' + KAI;
-    ctx.fillText('扫码 · 给自己也算一笺', W/2, qrY + qrSize + 28);
+    const qs = 100, qx = W - 96 - qs, qy = footY + 54;
+    ctx.strokeStyle = 'rgba(160,124,28,.55)'; ctx.lineWidth = 1.5;
+    roundRect(ctx, qx - 7, qy - 7, qs + 14, qs + 14, 5); ctx.stroke();
+    ctx.drawImage(qrFate, qx, qy, qs, qs);
+    ctx.fillStyle = '#8a7c5f'; ctx.font = '16px ' + KAI;
+    '扫码观笺'.split('').forEach((ch, i) => ctx.fillText(ch, qx - 30, qy + 10 + i * 19));
   }
 
   applySkin(ctx, W, H);
@@ -9720,3 +9715,5 @@ function showToast(msg){
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
+
