@@ -416,6 +416,9 @@
   });
 
   /* ---------- 海报 ---------- */
+  var qrHe = new Image(); qrHe.src = '/assets/qr-he.png';
+  qrHe.onload = function(){ if(lastData) drawPoster(lastData); };
+
   function wrapLines(ctx, text, maxW){
     var lines = [], cur = '';
     for(var i=0;i<text.length;i++){
@@ -431,12 +434,13 @@
     var cv = el('posterCanvas'), ctx = cv.getContext('2d');
     var W = 750, KAI = 'KaiTi, STKaiti, "Kaiti SC", STSong, SimSun, serif';
 
-    ctx.fillStyle = '#f5eeda'; ctx.fillRect(0,0,W,1334);
-    var g = ctx.createLinearGradient(0,0,W,1334);
+    var H = 1500; cv.height = H;
+    ctx.fillStyle = '#f5eeda'; ctx.fillRect(0,0,W,H);
+    var g = ctx.createLinearGradient(0,0,W,H);
     g.addColorStop(0,'#f7f0df'); g.addColorStop(1,'#eadfc4');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,1334);
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
     ctx.strokeStyle = 'rgba(164,52,42,.45)'; ctx.lineWidth = 2;
-    ctx.strokeRect(28,28,W-56,1334-56);
+    ctx.strokeRect(28,28,W-56,H-56);
 
     // 印章
     ctx.fillStyle = '#a4342a';
@@ -480,15 +484,22 @@
     // 中缝
     ctx.textAlign = 'center';
     ctx.strokeStyle = 'rgba(160,124,28,.35)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(200, 1100); ctx.lineTo(W - 200, 1100); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(200, 1080); ctx.lineTo(W - 200, 1080); ctx.stroke();
     ctx.fillStyle = '#8a7c5f'; ctx.font = '22px ' + KAI;
-    ctx.fillText('同一对生辰 · 永出同一笺', W/2, 1148);
+    ctx.fillText('同一对生辰 · 永出同一笺', W/2, 1126);
 
     // 底
+    if(qrHe.complete && qrHe.naturalWidth){
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(W/2 - 70, 1166, 140, 140);
+      ctx.drawImage(qrHe, W/2 - 65, 1171, 130, 130);
+      ctx.fillStyle = '#8a7c5f'; ctx.font = '18px ' + KAI;
+      ctx.fillText('扫码 · 也合一笺', W/2, 1330);
+    }
     ctx.fillStyle = '#8a7c5f'; ctx.font = '20px ' + KAI;
-    ctx.fillText('仅供文化娱乐参考 · 相处在人不在盘', W/2, 1240);
+    ctx.fillText('仅供文化娱乐参考 · 相处在人不在盘', W/2, 1390);
     ctx.fillStyle = '#a89a79'; ctx.font = '18px ' + KAI;
-    ctx.fillText('一纸书房 · dolow.dev', W/2, 1278);
+    ctx.fillText('一纸书房 · dolow.dev', W/2, 1420);
 
     el('posterBox').classList.add('on');
   }
@@ -509,3 +520,4 @@
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+

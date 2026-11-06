@@ -110,6 +110,9 @@
   .dp-day.on{background:linear-gradient(160deg,#b23c30,#8c2a21);color:#f8efdc;border-color:#8c2a21}
   .dp-day.blank{visibility:hidden;pointer-events:none}
   .setup .hint{margin-top:10px;font-size:11.5px;color:#6f6552;line-height:1.8}
+  #posterBox{display:none;margin-top:18px;text-align:center}
+  #posterBox.on{display:block}
+  #posterCanvas{width:100%;max-width:320px;border:1px solid rgba(179,165,134,.3);border-radius:4px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
   .toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);
     background:rgba(35,29,20,.95);border:1px solid rgba(179,165,134,.35);color:#e6dcc4;
     padding:9px 18px;border-radius:4px;font-size:12.5px;letter-spacing:1px;opacity:0;
@@ -138,9 +141,15 @@
   </div>
 
   <div class="btns">
-    <button class="btn" id="copyBtn">复 制 签 文</button>
+    <button class="btn" id="savePngBtn">存 成 图 片</button>
+    <button class="btn ghost" id="copyBtn">复 制 签 文</button>
+  </div>
+  <div class="btns">
+    <button class="btn ghost" id="linkBtn">复 制 链 接</button>
     <button class="btn ghost" id="resetBtn">换 生 辰</button>
   </div>
+
+  <div id="posterBox"><canvas id="posterCanvas" width="750" height="1334"></canvas></div>
 
   <div class="setup" id="setup">
     <label>你的出生日期（日签只用日柱，不用时辰）</label>
@@ -217,6 +226,13 @@
   var birth = null;
   try { birth = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){}
 
+  // 分享链接: ?d=YYYY-MM-DD 直接出同一个人的今日签
+  var qd = new URLSearchParams(location.search).get('d');
+  if(qd && /^\d{4}-\d{2}-\d{2}$/.test(qd)){
+    var qp = qd.split('-').map(Number);
+    birth = { y: qp[0], m: qp[1], d: qp[2] };
+  }
+
   function render(){
     var now = new Date();
     var y = now.getFullYear(), m = now.getMonth()+1, d = now.getDate();
@@ -250,12 +266,18 @@
     window._share = '一纸日签 ' + y + '-' + (m<10?'0':'') + m + '-' + (d<10?'0':'') + d
       + ' ' + today + '｜宜：' + yi.join('、') + '｜忌：' + ji.join('、')
       + '｜一纸书房 dolow.dev';
+    window._daily = {
+      dateStr: y + '-' + (m<10?'0':'') + m + '-' + (d<10?'0':'') + d,
+      today: today, bGz: bGz, ss: ss, yi: yi, ji: ji, line: p.line, rel: relTxt
+    };
   }
 
   function showSetup(on){
     el('setup').classList.toggle('on', on);
     el('copyBtn').style.display = on ? 'none' : '';
     el('resetBtn').style.display = on ? 'none' : '';
+    el('savePngBtn').style.display = on ? 'none' : '';
+    el('linkBtn').style.display = on ? 'none' : '';
   }
 
   /* ---------- 国风日历盘 ---------- */
@@ -371,6 +393,102 @@
       ta.select(); try{ document.execCommand('copy'); toast('签文已复制'); }catch(e){ toast('复制失败'); }
       document.body.removeChild(ta);
     }
+  });
+
+  /* ---------- 海报 ---------- */
+  var KAI = "KaiTi, STKaiti, 'Kaiti SC', STSong, SimSun, serif";
+  var qrImg = new Image(); qrImg.src = '/assets/qr-daily.png';
+
+  function wrap2(ctx, text, maxW){
+    var lines = [], cur = '';
+    for(var i=0;i<text.length;i++){
+      var t = cur + text[i];
+      if(ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = text[i]; }
+      else cur = t;
+    }
+    if(cur) lines.push(cur);
+    return lines;
+  }
+
+  function drawDailyPoster(){
+    var D = window._daily; if(!D) return;
+    var cv = el('posterCanvas'), ctx = cv.getContext('2d');
+    var W = 750, H = 1334;
+    ctx.clearRect(0,0,W,H);
+    var g = ctx.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,'#f8f1e1'); g.addColorStop(1,'#e9ddc2');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(164,52,42,.45)'; ctx.lineWidth=2; ctx.strokeRect(28,28,W-56,H-56);
+    ctx.strokeStyle='rgba(160,124,28,.4)'; ctx.lineWidth=1; ctx.strokeRect(38,38,W-76,H-76);
+
+    // 朱印
+    ctx.fillStyle='#a4342a'; ctx.fillRect(W/2-34, 88, 68, 68);
+    ctx.fillStyle='#f7efe0'; ctx.textAlign='center'; ctx.font='34px '+KAI;
+    ctx.fillText('签', W/2, 136);
+
+    ctx.fillStyle='#2b2419'; ctx.font='600 52px '+KAI;
+    ctx.fillText('一 纸 日 签', W/2, 226);
+    ctx.fillStyle='#8a7c5f'; ctx.font='22px '+KAI;
+    ctx.fillText('同 一 人 · 同 一 天 · 同 一 签', W/2, 268);
+
+    ctx.fillStyle='#6b5f49'; ctx.font='26px '+KAI;
+    var dp = D.dateStr.split('-').map(Number);
+    ctx.fillText(dp[0] + ' 年 ' + dp[1] + ' 月 ' + dp[2] + ' 日', W/2, 330);
+    ctx.fillStyle='#2b2419'; ctx.font='28px '+KAI;
+    ctx.fillText('今日 ' + D.today + ' · 日主 ' + D.bGz[0] + ' · ' + D.ss, W/2, 384);
+
+    ctx.textAlign='left';
+    ctx.fillStyle='#a4342a'; ctx.font='32px '+KAI; ctx.fillText('宜', 110, 470);
+    ctx.fillStyle='#3b3122'; ctx.font='28px '+KAI;
+    D.yi.forEach(function(t,i){ ctx.fillText('· ' + t, 175, 520 + i*52); });
+
+    ctx.fillStyle='#4a3f2f'; ctx.font='32px '+KAI; ctx.fillText('忌', 110, 700);
+    ctx.fillStyle='#3b3122'; ctx.font='28px '+KAI;
+    D.ji.forEach(function(t,i){ ctx.fillText('· ' + t, 175, 750 + i*52); });
+
+    ctx.textAlign='center';
+    ctx.strokeStyle='rgba(160,124,28,.35)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(150, 900); ctx.lineTo(W-150, 900); ctx.stroke();
+    ctx.fillStyle='#3b3122'; ctx.font='27px '+KAI;
+    var lines = wrap2(ctx, D.line, W - 190);
+    lines.slice(0,3).forEach(function(l,i){ ctx.fillText(l, W/2, 950 + i*44); });
+    ctx.fillStyle='#8a7c5f'; ctx.font='22px '+KAI;
+    ctx.fillText(D.rel, W/2, 950 + lines.slice(0,3).length*44 + 22);
+
+    // 落款 + 二维码
+    ctx.textAlign='left';
+    ctx.fillStyle='#6b5f49'; ctx.font='20px '+KAI;
+    ctx.fillText('一纸日签 谨制 · 一纸书房', 80, 1160);
+    ctx.fillStyle='#a89a79'; ctx.font='17px '+KAI;
+    ctx.fillText('dolow.dev/daily', 80, 1196);
+
+    if(qrImg.complete && qrImg.naturalWidth){
+      ctx.fillStyle='#fff'; ctx.fillRect(W-250, 1070, 150, 150);
+      ctx.drawImage(qrImg, W-244, 1076, 138, 138);
+      ctx.textAlign='center';
+      ctx.fillStyle='#8a7c5f'; ctx.font='17px '+KAI;
+      ctx.fillText('扫码 · 看你今日一签', W-175, 1248);
+    }
+  }
+
+  el('savePngBtn').addEventListener('click', function(){
+    if(!window._daily){ toast('先起一签'); return; }
+    drawDailyPoster();
+    el('posterBox').classList.add('on');
+    var a = document.createElement('a');
+    a.download = '一纸日签_' + window._daily.dateStr + '.png';
+    a.href = el('posterCanvas').toDataURL('image/png');
+    a.click();
+    toast('已存图');
+  });
+
+  el('linkBtn').addEventListener('click', function(){
+    if(!birth){ toast('先填生辰'); return; }
+    var d = birth.y + '-' + (birth.m<10?'0':'') + birth.m + '-' + (birth.d<10?'0':'') + birth.d;
+    var url = location.origin + '/daily/?d=' + d;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){ toast('链接已复制'); }, function(){ toast(url); });
+    } else { toast(url); }
   });
 })();
 </script>

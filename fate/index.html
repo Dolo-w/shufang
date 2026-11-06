@@ -9374,6 +9374,11 @@ function render(R){
 /* ---------- 海报(canvas 750x1334) ---------- */
 const WATERMARK = ''; // 引流水印: 如 '某号 · 扫码观笺', 默认留空只落「一纸命笺」
 
+/* 引流二维码(海报底部) */
+const qrFate = new Image();
+qrFate.src = '/assets/qr-fate.png';
+qrFate.onload = function(){ if(window._posterDrawn) drawPoster(); };
+
 /* 笺纸皮肤: 在画完之后做一层柔光叠色, 不逐处改色, 风险最小 */
 let posterSkin = 'plain';
 const SKIN_TINT = { plain: null, qing: '#7f9f8a', xin: '#c08063' };
@@ -9407,7 +9412,9 @@ function drawPoster(){
   let ty = by;
   triLines.forEach(lns => { by += lns.length*34 + 10; });
   const footY = Math.max(1240, by + 76);
-  H = Math.max(1334, footY + 74);
+  const qrSize = 120;
+  const qrY = footY + 70;
+  H = Math.max(1334, qrY + qrSize + 58);
   cv.height = H;                            // 增高会清空画布, 必须在动笔之前
 
   // 纸底
@@ -9545,6 +9552,15 @@ function drawPoster(){
   } else {
     ctx.fillStyle = '#a89a79'; ctx.font = '17px ' + KAI;
     ctx.fillText('本笺取材干支五行传统 · 仅供文化娱乐参考', W/2, footY+32);
+  }
+
+  // 引流二维码
+  if(qrFate.complete && qrFate.naturalWidth){
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(W/2 - qrSize/2 - 5, qrY - 5, qrSize + 10, qrSize + 10);
+    ctx.drawImage(qrFate, W/2 - qrSize/2, qrY, qrSize, qrSize);
+    ctx.fillStyle = '#8a7c5f'; ctx.font = '17px ' + KAI;
+    ctx.fillText('扫码 · 给自己也算一笺', W/2, qrY + qrSize + 28);
   }
 
   applySkin(ctx, W, H);
