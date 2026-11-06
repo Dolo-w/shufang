@@ -1,3 +1,7 @@
 node_modules/
 .DS_Store
 Thumbs.db
+
+# 本地测试页
+_*.html
+**/_*.html
