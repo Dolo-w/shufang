@@ -9182,6 +9182,11 @@ function compute(){
     if(Math.abs(diff) >= 25) tsHint = '你出生地与北京时间差约 '+Math.abs(diff)+' 分钟, 若生于时辰交界处(前后约1小时), 建议按当地真太阳时核对时辰。';
   }
 
+  // 记住生辰，供「一纸日签」用（只存日期，不存姓名）
+  try {
+    localStorage.setItem('shufang_birth', JSON.stringify({ y: y, m: m, d: dd, hour: hourKnown ? hour : -1, gender: gender }));
+  } catch(e) {}
+
   // 大运：顺逆由「年干阴阳 × 性别」定，缺性别就不排（不猜）
   let yun = null;
   if(gender === '男' || gender === '女'){
