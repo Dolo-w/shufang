@@ -9424,7 +9424,7 @@ function drawPoster(){
   let ty = by;
   triLines.forEach(lns => { by += lns.length*34 + 10; });
   const footY = Math.max(1240, by + 76);
-  H = Math.max(1334, footY + 200);
+  H = Math.max(1334, footY + 180);
   cv.height = H;                            // 增高会清空画布, 必须在动笔之前
 
   // 纸底
@@ -9551,23 +9551,19 @@ function drawPoster(){
     ty2 += triLines[i].length*34 + 10;
   });
 
-  // ===== 落款(左) + 二维码(右下) =====
+  // ===== 落款(左) + 二维码(右, 与落款同一行带) =====
   const today = L.Solar.fromDate(new Date()).getLunar();
   ctx.textAlign = 'left';
   ctx.fillStyle = '#6b5f49'; ctx.font = '21px ' + KAI;
   const namePart = R.name ? R.name+' 亲览 · ' : '';
-  ctx.fillText(namePart + '岁次' + today.getYearInGanZhiByLiChun() + '年 ' + today.getMonthInChinese()+'月'+today.getDayInChinese()+'日 · 一纸命笺 谨制', 66, footY);
+  ctx.fillText(namePart + '岁次' + today.getYearInGanZhiByLiChun() + '年 ' + today.getMonthInChinese()+'月'+today.getDayInChinese()+'日', 66, footY);
   ctx.fillStyle = '#a89a79'; ctx.font = '16px ' + KAI;
-  ctx.fillText(WATERMARK || '本笺取材干支五行传统 · 仅供文化娱乐参考', 66, footY+30);
+  ctx.fillText('一纸命笺 谨制 · ' + (WATERMARK || '本笺取材干支五行传统, 仅供文化娱乐参考'), 66, footY+30);
 
-  // 墨色二维码, 直接印在纸上, 不压白底
+  // 印式二维码(墨码 + 回纹 + 笺印)
   if(qrFate.complete && qrFate.naturalWidth){
-    const qs = 100, qx = W - 96 - qs, qy = footY + 54;
-    ctx.strokeStyle = 'rgba(160,124,28,.55)'; ctx.lineWidth = 1.5;
-    roundRect(ctx, qx - 7, qy - 7, qs + 14, qs + 14, 5); ctx.stroke();
-    ctx.drawImage(qrFate, qx, qy, qs, qs);
-    ctx.fillStyle = '#8a7c5f'; ctx.font = '16px ' + KAI;
-    '扫码观笺'.split('').forEach((ch, i) => ctx.fillText(ch, qx - 30, qy + 10 + i * 19));
+    const qs = 132, qh = qs * 700 / 600, qx = W - 66 - qs, qy = footY - 54;
+    ctx.drawImage(qrFate, qx, qy, qs, qh);
   }
 
   applySkin(ctx, W, H);
@@ -9757,5 +9753,9 @@ function showToast(msg){
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
+
+
+
 
 
