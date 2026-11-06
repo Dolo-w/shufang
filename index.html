@@ -66,12 +66,12 @@
     box-shadow:0 3px 10px rgba(0,0,0,.5), inset 0 0 0 2px rgba(247,239,224,.35), inset 0 0 0 4px #8c2a21;
   }
   h1{
-    font-size:42px;letter-spacing:14px;text-indent:14px;font-weight:600;
+    font-size:42px;letter-spacing:14px;margin-right:-14px;font-weight:600;
     background:linear-gradient(180deg,#f6ecd2 30%,#d9c08a);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     text-shadow:0 2px 18px rgba(0,0,0,.35);
   }
-  .sub{margin-top:12px;color:#b3a586;font-size:13.5px;letter-spacing:5px;text-indent:5px}
+  .sub{margin-top:12px;color:#b3a586;font-size:13.5px;letter-spacing:5px;margin-right:-5px}
   .orn{display:flex;align-items:center;justify-content:center;gap:12px;margin:18px auto 0}
   .orn::before,.orn::after{content:'';height:1px;width:90px;
     background:linear-gradient(90deg,transparent,var(--hairline))}
@@ -133,7 +133,7 @@
   footer a:hover{color:#f0e6cf}
 
   @media (max-width:520px){
-    h1{font-size:34px;letter-spacing:10px;text-indent:10px}
+    h1{font-size:34px;letter-spacing:10px;margin-right:-10px}
     .card{padding:16px 16px;gap:14px}
   }
   /* 订阅 */
@@ -248,3 +248,4 @@
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
