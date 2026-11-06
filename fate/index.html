@@ -241,6 +241,17 @@
   }
   .btn.ghost:hover{background:rgba(47,79,82,.07);filter:none}
 
+  /* 笺纸皮肤 */
+  .skins{display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 0 2px;flex-wrap:wrap}
+  .skins-t{font-size:11.5px;color:#a89a79;letter-spacing:2px;margin-right:2px}
+  .skin{
+    padding:5px 13px;border:1px solid #c9b785;border-radius:14px;background:rgba(255,252,244,.7);
+    font-family:inherit;font-size:12.5px;color:#6b5f49;cursor:pointer;letter-spacing:1px;
+    transition:background .12s,color .12s,border-color .12s;
+  }
+  .skin:hover{border-color:var(--cinnabar);color:var(--cinnabar)}
+  .skin.on{background:var(--cinnabar);border-color:var(--cinnabar);color:#f8efdc}
+
   /* ===== 结果区 ===== */
   #result{display:none;margin-top:34px}
   .reveal{animation:fadeUp .55s cubic-bezier(.2,.7,.3,1) both}
@@ -453,7 +464,14 @@
       <div class="trio" id="rTrio"></div>
     </div>
     <div class="disc">同一生辰, 永出一笺 —— 断语由规则生成, 不随口而变</div>
+    <div class="skins" id="skinRow">
+      <span class="skins-t">笺纸</span>
+      <button type="button" class="skin on" data-skin="plain">素笺</button>
+      <button type="button" class="skin" data-skin="qing">青笺</button>
+      <button type="button" class="skin" data-skin="xin">朱笺</button>
+    </div>
     <button class="btn ghost" id="posterBtn">展 卷 成 图</button>
+    <button class="btn ghost" id="shareBtn">复 制 链 接</button>
   </div>
 
   <div id="posterBox">
@@ -9346,6 +9364,20 @@ function render(R){
 /* ---------- 海报(canvas 750x1334) ---------- */
 const WATERMARK = ''; // 引流水印: 如 '某号 · 扫码观笺', 默认留空只落「一纸命笺」
 
+/* 笺纸皮肤: 在画完之后做一层柔光叠色, 不逐处改色, 风险最小 */
+let posterSkin = 'plain';
+const SKIN_TINT = { plain: null, qing: '#7f9f8a', xin: '#c08063' };
+function applySkin(ctx, W, H){
+  const tint = SKIN_TINT[posterSkin];
+  if(!tint) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'color';
+  ctx.globalAlpha = 0.38;
+  ctx.fillStyle = tint;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
 function drawPoster(){
   const R = window._R; if(!R) return;
   const V = buildVerdicts(R);
@@ -9505,6 +9537,7 @@ function drawPoster(){
     ctx.fillText('本笺取材干支五行传统 · 仅供文化娱乐参考', W/2, footY+32);
   }
 
+  applySkin(ctx, W, H);
   document.getElementById('posterBox').style.display = 'block';
   document.getElementById('posterBox').scrollIntoView({behavior:'smooth'});
   window._posterDrawn = true;
@@ -9611,6 +9644,26 @@ document.getElementById('birthForm').addEventListener('submit', e => {
   if(R) render(R);
 });
 document.getElementById('posterBtn').addEventListener('click', drawPoster);
+document.getElementById('skinRow').addEventListener('click', e => {
+  const b = e.target.closest('.skin'); if(!b) return;
+  posterSkin = b.dataset.skin;
+  document.querySelectorAll('.skin').forEach(x => x.classList.toggle('on', x === b));
+  if(document.getElementById('posterBox').style.display === 'block') drawPoster();
+});
+document.getElementById('shareBtn').addEventListener('click', () => {
+  const q = new URLSearchParams({
+    d: document.getElementById('fDate').value,
+    h: document.getElementById('fHour').value,
+    g: document.getElementById('fGender').value,
+    n: document.getElementById('fName').value.trim()
+  });
+  const url = location.origin + '/fate/r/?' + q.toString();
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(() => showToast('链接已复制, 可直接发人'), () => showToast(url));
+  } else {
+    showToast(url);
+  }
+});
 document.getElementById('downloadBtn').addEventListener('click', () => {
   if(!window._posterDrawn) drawPoster();
   const cv = document.getElementById('posterCanvas');

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>命笺 · 一纸书房</title>
+<meta name="robots" content="noindex,follow">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta name="theme-color" content="#191510">
+<style>
+  :root{
+    --paper:#f5eeda; --paper2:#eee2c6; --ink:#2b2419; --ink2:#6b5f49;
+    --cinnabar:#a4342a; --teal:#2f4f52;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'KaiTi','STKaiti','Kaiti SC','STSong','SimSun',serif;
+    background:radial-gradient(1100px 480px at 50% -120px, rgba(164,52,42,.14), transparent 60%),#191510;
+    color:#b3a586;min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    padding:40px 16px 64px;
+  }
+  .wrap{width:100%;max-width:640px}
+  .paper{
+    background:linear-gradient(160deg,var(--paper) 60%,var(--paper2));
+    border:1px solid #cbb98e;border-radius:6px;
+    box-shadow:0 18px 50px rgba(0,0,0,.55), inset 0 0 70px rgba(158,120,50,.10);
+    padding:34px 26px 28px;position:relative;
+  }
+  .paper::before{content:'';position:absolute;inset:10px;pointer-events:none;border-radius:3px;border:1px solid rgba(164,52,42,.30)}
+  .name{text-align:center;font-size:22px;color:#2b2419;letter-spacing:4px}
+  .meta{text-align:center;margin-top:8px;font-size:12.5px;color:#8a7c5f;letter-spacing:1px}
+  .h2{text-align:center;margin-top:26px;font-size:14px;color:var(--cinnabar);letter-spacing:6px;text-indent:6px}
+  .pillars{display:flex;justify-content:center;gap:12px;margin-top:16px}
+  .pillar{flex:1;max-width:110px;text-align:center;border:1px solid rgba(160,124,28,.3);border-radius:5px;padding:10px 4px;background:rgba(255,252,244,.5)}
+  .pillar .tag{font-size:11px;color:#a89a79;letter-spacing:2px}
+  .pillar .gan,.pillar .zhi{font-size:30px;color:#2b2419;line-height:1.25}
+  .pillar .ss{font-size:11px;color:var(--cinnabar);margin-top:4px}
+  .pillar .wx{font-size:10.5px;color:var(--teal);margin-top:2px}
+  .bars{margin-top:22px}
+  .bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .bar .n{width:22px;font-size:13px;color:#2b2419;text-align:right}
+  .bar .tr{flex:1;height:12px;background:rgba(210,190,150,.4);border-radius:2px;overflow:hidden}
+  .bar .fl{height:100%}
+  .bar .v{width:18px;font-size:11.5px;color:#8a7c5f}
+  .sec{margin-top:24px;padding-top:16px;border-top:1px dashed #c2ae7f}
+  .sec .k{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:3px;
+    background:rgba(164,52,42,.08);color:var(--cinnabar);font-size:11.5px;margin-right:8px;vertical-align:2px}
+  .sec p{display:inline;font-size:13.5px;line-height:2;color:#4a3f2f}
+  .main-txt{margin-top:14px;font-size:14.5px;line-height:2.1;color:#2b2419}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
+  th,td{padding:7px 6px;text-align:center;border-bottom:1px solid rgba(160,124,28,.18);color:#4a3f2f}
+  th{color:#8a7c5f;font-weight:normal;font-size:11.5px;letter-spacing:1px}
+  tr.cur td{color:var(--cinnabar)}
+  .foot{margin-top:22px;text-align:center;font-size:11.5px;color:#8a7c5f;line-height:2}
+  .foot a{color:#a4342a;text-decoration:none;border-bottom:1px dashed rgba(164,52,42,.4)}
+  .cta{margin-top:26px;text-align:center;font-size:13px;color:#8d8167}
+  .cta a{color:#c9b98f;text-decoration:none;border-bottom:1px dashed rgba(179,165,134,.5)}
+  .empty{text-align:center;padding:60px 20px;font-size:14px;color:#8d8167;line-height:2.2}
+  .empty a{color:#c9b98f}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="paper" id="paper">
+    <div class="empty" id="empty" style="display:none">
+      这张笺缺了生辰。<br>
+      <a href="/fate/">去一纸命笺自己算一张 →</a>
+    </div>
+    <div id="content" style="display:none">
+      <div class="name" id="rName"></div>
+      <div class="meta" id="rMeta"></div>
+
+      <div class="h2">四 柱</div>
+      <div class="pillars" id="rPillars"></div>
+
+      <div class="bars" id="rBars"></div>
+
+      <div class="main-txt" id="rMain"></div>
+
+      <div class="sec"><span class="k">性</span><p id="rXing"></p></div>
+      <div class="sec"><span class="k">禄</span><p id="rLu"></p></div>
+      <div class="sec"><span class="k">世</span><p id="rShi"></p></div>
+
+      <div id="rYunWrap" style="display:none">
+        <div class="h2">大 运</div>
+        <table id="rYunTable"></table>
+        <div class="meta" id="rYunNow" style="margin-top:10px"></div>
+      </div>
+
+      <div class="foot" id="rFoot"></div>
+    </div>
+  </div>
+
+  <div class="cta">
+    想看自己的？<a href="/fate/">去一纸命笺</a> · <a href="/">回书房</a>
+  </div>
+</div>
+
+<script src="/assets/lunar.js"></script>
+<script>
+(function(){
+  var GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  var ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  var GAN_WX = ['木','木','火','火','土','土','金','金','水','水'];
+  var ZHI_WX = ['水','土','木','木','土','火','火','土','金','金','土','水'];
+  var WX_ORDER = ['木','火','土','金','水'];
+  var GAN_YANG = {'甲':1,'丙':1,'戊':1,'庚':1,'壬':1};
+  var SS_SHENG = {木:'火', 火:'土', 土:'金', 金:'水', 水:'木'};
+  var SS_KE    = {木:'土', 土:'水', 水:'火', 火:'金', 金:'木'};
+
+  var RI_ZHU = {
+    '甲':'甲木参天, 其性直而上。为人有栋梁之志, 认定的事肯一条道走到头。吃软不吃硬, 敬其诚者得其力。',
+    '乙':'乙木为藤萝, 柔而能绕。不与人争锋, 却总能找到自己的缝隙向上生长。看似随和, 心里那本账其实极清。',
+    '丙':'丙火如日, 光照四方。性子敞亮, 热在明处, 冷脸装不出来。人聚处常是你发声, 但要留意别把别人都晒干了。',
+    '丁':'丁火为灯烛, 静而持久。不是场面上的光, 是深夜里那盏不灭的。认人极准, 对上眼的人能暖很久。',
+    '戊':'戊土为城垣, 厚重可依。话不多, 承诺了就是承诺。别人慌的时候你先稳, 缺点是稳过了头, 变化来了转得慢。',
+    '己':'己土为田园, 能生万物。包容度极高, 什么人到你这儿都能处。但田园也怕被踩, 忍到临界点的爆发往往连自己都吃惊。',
+    '庚':'庚金为剑, 遇事敢断。眼里揉不进沙子, 不平则鸣。成也这份锋利, 败也这份锋利。',
+    '辛':'辛金为珠玉, 细而贵重。对品质、对细节有天生的敏感, 凑合不了一点。自尊心藏得深, 被轻慢时不吵, 但记很久。',
+    '壬':'壬水为江河, 奔流不回头。思路活, 路子野, 天生讨厌被圈住。给你一条河道你能发电, 把你圈成水洼你就浑。',
+    '癸':'癸水为雨露, 润物无声。聪明不显山露水, 观察在先、出手在后。表面随波, 底下自有流向。'
+  };
+  var SHI_SHEN = {
+    '正官':'守正持衡之人, 名声在你这里重过实利。适合在规矩之地建功, 最忌心急越线。',
+    '七杀':'临事果决, 专挑硬骨头啃。压力对你不是坏事, 是磨刀石; 但要学会给自己松弦。',
+    '正财':'勤恳聚积型, 一分耕耘认一分收成。财缘稳, 忌贪快钱, 稳字本身就是你的财。',
+    '偏财':'财自远方来, 路子活, 机会型收入多于死工资。慷慨是天性, 防散是功课。',
+    '正印':'贵人多助之相, 学业文章见长。宜以专业立身, 凭本事吃饭的人给你让路。',
+    '偏印':'心思奇巧, 常有旁人想不到的角度。适合多留一手准备, 忌半途改道太频。',
+    '食神':'口福与才华并见之相, 宜以内容、技艺扬名, 做自己喜欢的事还能养活自己。',
+    '伤官':'才气锋利, 不肯循旧轨。天生的破局者, 锋芒配雅量, 方能才尽其用。',
+    '比肩':'自立门户之相, 同辈是你的助力也是镜子。合伙做事, 账目越明, 情谊越长。',
+    '劫财':'豪爽重情, 朋友有难第一个到场。义气要有边界, 借贷担保之类, 慎落笔。'
+  };
+  var WANG_XING = {
+    '木':'木气旺, 主仁而有进, 生机外放。注意别把计划排满到没给自己留喘息。',
+    '火':'火气旺, 主礼而明快, 热在明处。燃得太旺时, 学学蜡烛而不是野火。',
+    '土':'土气旺, 主信而能容, 人愿意托付你。但别把所有担子都默认揽到自己肩上。',
+    '金':'金气旺, 主义而果决, 说到做到。刚极易折, 留三分余地不是怂, 是韧。',
+    '水':'水气旺, 主智而善变, 脑子永远比脚快。聪明要配定向, 江河入海靠的是河道。'
+  };
+  var QUE_XING = {
+    '木':'木未现, 仁气藏而不显——于你, 「开始」那一脚容易犹豫, 练习先动手再完善。',
+    '火':'火未现, 明快藏而不显——你多半不擅长把热情当众说出来, 但内里的温度不缺。',
+    '土':'土未现, 厚重藏而不显——轻, 是你的长处; 稳, 是要刻意练习的部分。',
+    '金':'金未现, 果决藏而不显——决定前多转几圈是常态, 给自己设个截止线会好很多。',
+    '水':'水未现, 灵动藏而不显——你是直线型思维, 变通于你是选修课不是必修课。'
+  };
+  function caiText(c){
+    if(c === 0) return '八字不见财星, 不主贫, 主你对「攥在手里」的东西欲望本低; 钱常从旁路来。';
+    if(c === 1) return '财不居多的格局, 聚财不在多而在守, 你属于细水长流型。';
+    if(c === 2) return '财星持平, 得失自有节律, 大起大落都不容易。';
+    if(c === 3) return '财星偏旺, 机会面前你手比脑快, 这是本事; 记账这件事, 建议当修行。';
+    return '财星极旺, 满盘皆是, 反要学「舍」字诀——抓得越全, 散得越快。';
+  }
+  function shiShenOf(dayGan, otherGan){
+    var dW = GAN_WX[GAN.indexOf(dayGan)], oW = GAN_WX[GAN.indexOf(otherGan)];
+    var same = (GAN_YANG[dayGan] ? 1 : 0) === (GAN_YANG[otherGan] ? 1 : 0);
+    if(dW === oW) return same ? '比肩' : '劫财';
+    if(SS_SHENG[dW] === oW) return same ? '食神' : '伤官';
+    if(SS_KE[dW] === oW) return same ? '偏财' : '正财';
+    if(SS_KE[oW] === dW) return same ? '七杀' : '正官';
+    return same ? '偏印' : '正印';
+  }
+  var YUN_TXT = {
+    '正官':'规矩、责任、名分的事会找上门, 适合按流程推进。',
+    '七杀':'压力与机会一起来, 硬仗能打出结果, 但别硬扛到伤身。',
+    '正财':'钱的事宜稳不宜快, 正职收入与务实投入比投机靠谱。',
+    '偏财':'外来机会多, 花销也多; 进得活, 容易散。',
+    '正印':'适合学习、考证、被提携, 文书类的事顺。',
+    '偏印':'想法多、路子偏, 适合琢磨冷门本事。',
+    '食神':'表达、内容、手艺上有发挥; 日子别过成赶工。',
+    '伤官':'锋芒外露, 适合破局创新; 说话留三分。',
+    '比肩':'同辈往来密, 合作与竞争并存。',
+    '劫财':'人情与开销都旺; 帮人可以, 担保借贷慎签。'
+  };
+
+  function el(id){ return document.getElementById(id); }
+  function pad2(n){ return n < 10 ? '0' + n : '' + n; }
+
+  var q = new URLSearchParams(location.search);
+  var d = q.get('d') || '';
+  var h = parseInt(q.get('h') || '-1', 10);
+  var g = q.get('g') || '';
+  var n = (q.get('n') || '').trim();
+
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d) || typeof Solar === 'undefined'){
+    el('paper').firstElementChild.style.display = 'block';
+    el('empty').style.display = 'block';
+    return;
+  }
+
+  var p = d.split('-').map(Number);
+  var hourKnown = h >= 0;
+  var hour = 12, minute = 0;
+  if(hourKnown){ if(h === 0){ hour = 0; minute = 30; } else { hour = h*2 + 1; } }
+
+  var solar = Solar.fromYmdHms(p[0], p[1], p[2], hour, minute, 0);
+  var lunar = solar.getLunar();
+  var ec = lunar.getEightChar();
+
+  var yearGZ = ec.getYear(), monthGZ = ec.getMonth(), dayGZ = ec.getDay();
+  var timeGZ = hourKnown ? ec.getTime() : null;
+
+  var wxCount = {木:0,火:0,土:0,金:0,水:0};
+  var pillars = [yearGZ, monthGZ, dayGZ, timeGZ].filter(Boolean);
+  var nChars = 0;
+  pillars.forEach(function(gz){
+    wxCount[GAN_WX[GAN.indexOf(gz[0])]]++;
+    wxCount[ZHI_WX[ZHI.indexOf(gz[1])]]++;
+    nChars += 2;
+  });
+
+  var dayGan = dayGZ[0];
+  var dayZhuXing = GAN_WX[GAN.indexOf(dayGan)];
+  var monthZhiXing = ZHI_WX[ZHI.indexOf(monthGZ[1])];
+  var deLing = monthZhiXing === dayZhuXing;
+
+  var ssGan = {
+    year: ec.getYearShiShenGan(), month: ec.getMonthShiShenGan(),
+    day: ec.getDayShiShenGan(), time: hourKnown ? ec.getTimeShiShenGan() : null
+  };
+
+  var caiXing = ['土','金','水','木','火'][GAN.indexOf(dayGan)];
+  var caiCount = wxCount[caiXing];
+
+  var maxWx = '木', maxV = -1, minWx = '水', minV = 99;
+  WX_ORDER.forEach(function(w){
+    if(wxCount[w] > maxV){ maxWx = w; maxV = wxCount[w]; }
+    if(wxCount[w] < minV){ minWx = w; minV = wxCount[w]; }
+  });
+
+  var main = RI_ZHU[dayGan];
+  var strength = deLing ? '得令而旺' : (wxCount[dayZhuXing] >= 3 ? '失时但众' : '失时且弱');
+  var mainHead = '日主' + dayGan + '(' + dayZhuXing + '), ' + strength + '。';
+  var xingTxt = maxV >= Math.max(3, nChars/4) ? WANG_XING[maxWx]
+    : (minV === 0 ? QUE_XING[minWx] : '五行' + (maxV - minV <= 1 ? '分布相济, 无大偏枯' : '略有倚重, 倚在「' + maxWx + '」'));
+  var luTxt = caiText(caiCount);
+  var shiTxt = SHI_SHEN[ssGan.year];
+
+  // 标题信息
+  el('rName').textContent = n ? n + ' 的命笺' : '一纸命笺';
+  el('rMeta').textContent = solar.toYmd() + ' · ' + lunar.toString() + (hourKnown ? '' : ' · 时辰未录');
+
+  // 四柱(从右至左: 年 月 日 时)
+  var gs = [
+    [timeGZ, '时', ssGan.time],
+    [dayGZ,  '日', ssGan.day],
+    [monthGZ,'月', ssGan.month],
+    [yearGZ, '年', ssGan.year]
+  ];
+  el('rPillars').innerHTML = gs.map(function(it){
+    var gz = it[0];
+    if(!gz) return '<div class="pillar"><div class="tag">时</div><div class="gan" style="color:#b6a87f">—</div><div class="ss" style="color:#a89a79">未录</div></div>';
+    var gi = GAN.indexOf(gz[0]), zi = ZHI.indexOf(gz[1]);
+    return '<div class="pillar"><div class="tag">' + it[1] + '</div>'
+      + '<div class="gan">' + gz[0] + '</div><div class="zhi">' + gz[1] + '</div>'
+      + '<div class="ss">' + it[2] + '</div>'
+      + '<div class="wx">' + GAN_WX[gi] + ' · ' + ZHI_WX[zi] + '</div></div>';
+  }).join('');
+
+  // 五行
+  var max = Math.max(1, WX_ORDER.map(function(w){ return wxCount[w]; }).reduce(function(a,b){ return Math.max(a,b); }, 1));
+  var FILL = {木:'#5a7247',火:'#a4342a',土:'#a08018',金:'#74746c',水:'#31556b'};
+  el('rBars').innerHTML = WX_ORDER.map(function(w){
+    return '<div class="bar"><div class="n">' + w + '</div>'
+      + '<div class="tr"><div class="fl" style="width:' + (wxCount[w]/max*100) + '%;background:' + FILL[w] + '"></div></div>'
+      + '<div class="v">' + wxCount[w] + '</div></div>';
+  }).join('');
+
+  el('rMain').innerHTML = '<b>' + mainHead + '</b>' + main;
+  el('rXing').textContent = xingTxt;
+  el('rLu').textContent = luTxt;
+  el('rShi').textContent = shiTxt;
+
+  // 大运
+  if(g === '男' || g === '女'){
+    try{
+      var yun = ec.getYun(g === '男' ? 1 : 0, 1);
+      var list = yun.getDaYun().map(function(x){
+        return { gz:x.getGanZhi(), sy:x.getStartYear(), ey:x.getEndYear(), sa:x.getStartAge(), ea:x.getEndAge() };
+      }).filter(function(x){ return x.gz && x.gz.length === 2; });
+      if(list.length){
+        var thisYear = new Date().getFullYear();
+        var curIdx = -1;
+        list.forEach(function(x,i){ if(thisYear >= x.sy && thisYear <= x.ey) curIdx = i; });
+        var rows = '<tr><th>年龄</th><th>大运</th><th>十神</th><th>年份</th></tr>';
+        list.slice(0, 9).forEach(function(x,i){
+          rows += '<tr' + (i === curIdx ? ' class="cur"' : '') + '>'
+            + '<td>' + x.sa + '–' + x.ea + '</td>'
+            + '<td>' + x.gz + '</td>'
+            + '<td>' + shiShenOf(dayGan, x.gz[0]) + '</td>'
+            + '<td>' + x.sy + '–' + x.ey + '</td></tr>';
+        });
+        el('rYunTable').innerHTML = rows;
+
+        var lnGz = Solar.fromYmdHms(thisYear, 7, 1, 12, 0, 0).getLunar().getYearInGanZhiByLiChun();
+        var lnSs = shiShenOf(dayGan, lnGz[0]);
+        var cur = curIdx >= 0 ? list[curIdx] : null;
+        el('rYunNow').textContent = (cur ? '当前大运 ' + cur.gz + '（' + cur.sy + '–' + cur.ey + '）· ' + shiShenOf(dayGan, cur.gz[0]) + '　' : '')
+          + '流年 ' + thisYear + ' ' + lnGz + ' · ' + lnSs + '　' + (YUN_TXT[lnSs] || '');
+        el('rYunWrap').style.display = 'block';
+      }
+    }catch(e){}
+  }
+
+  el('rFoot').innerHTML = '日柱纳音 ' + ec.getDayNaYin() + ' · 年柱纳音 ' + ec.getYearNaYin()
+    + '<br>同一生辰, 永出一笺 · 断语由规则生成';
+
+  el('content').style.display = 'block';
+
+  try{ navigator.sendBeacon('/api/hit', JSON.stringify({p: location.pathname})); }catch(e){}
+})();
+</script>
+</body>
+</html>
