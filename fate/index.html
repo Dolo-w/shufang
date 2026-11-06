@@ -290,6 +290,21 @@
   .wx-bar .num{width:22px;text-align:right;font-size:13px;color:var(--ink2);margin-left:8px}
 
   /* 断语 */
+  /* 大运 */
+  .yun{margin:4px 4px 22px}
+  .yun-h{font-size:13px;color:#6b5f49;letter-spacing:2px;margin-bottom:10px}
+  .yun-h span{font-size:10.5px;color:#a89a79;letter-spacing:.5px;margin-left:8px}
+  .yun-bar{display:flex;gap:7px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
+  .yun-chip{flex:0 0 auto;min-width:66px;background:rgba(160,124,28,.05);border:1px solid rgba(160,124,28,.25);border-radius:4px;padding:7px 9px;font-family:inherit;cursor:pointer;text-align:center;line-height:1.45;color:#6b5f49;transition:background .15s,border-color .15s}
+  .yun-chip .a{display:block;font-size:10px;color:#9a8c6d;letter-spacing:.3px}
+  .yun-chip .g{display:block;font-size:15px;color:#2b2419;letter-spacing:1px}
+  .yun-chip .s{display:block;font-size:10px;color:#8a7c5f}
+  .yun-chip.on{background:rgba(164,52,42,.09);border-color:rgba(164,52,42,.45)}
+  .yun-chip.on .g{color:#a4342a}
+  .yun-now{margin-top:10px;font-size:12.5px;line-height:1.95;color:#6b5f49}
+  .yun-now b{color:#2b2419;font-weight:600}
+  .yun-now .ss{color:#a4342a}
+
   .verdict{border-top:1px dashed #c2ae7f;padding-top:18px}
   .verdict .main{
     font-size:16.5px;line-height:1.95;color:var(--ink);
@@ -428,6 +443,11 @@
     <div class="bazi-grid" id="rPillars"></div>
     <div class="nayin" id="rNayin"></div>
     <div class="wx-bars" id="rWxBars"></div>
+    <div class="yun">
+      <div class="yun-h">大运 <span id="rYunSub"></span></div>
+      <div class="yun-bar" id="rYunBar"></div>
+      <div class="yun-now" id="rYunNow"></div>
+    </div>
     <div class="verdict">
       <div class="main" id="rMain"></div>
       <div class="trio" id="rTrio"></div>
@@ -9040,6 +9060,33 @@ const SHI_SHEN = {
   '劫财':'豪爽重情, 朋友有难第一个到场。义气要有边界, 借贷担保之类, 慎落笔。'
 };
 
+/* 大运/流年的十神与一句断语 —— 由日主与目标天干推, 不依赖库里的文案表 */
+const GAN_YANG = {'甲':1,'丙':1,'戊':1,'庚':1,'壬':1};
+const SS_SHENG = {木:'火', 火:'土', 土:'金', 金:'水', 水:'木'};
+const SS_KE    = {木:'土', 土:'水', 水:'火', 火:'金', 金:'木'};
+function shiShenOf(dayGan, otherGan){
+  const dW = GAN_WX[GAN.indexOf(dayGan)], oW = GAN_WX[GAN.indexOf(otherGan)];
+  const same = (GAN_YANG[dayGan] ? 1 : 0) === (GAN_YANG[otherGan] ? 1 : 0);
+  if(dW === oW) return same ? '比肩' : '劫财';
+  if(SS_SHENG[dW] === oW) return same ? '食神' : '伤官';
+  if(SS_KE[dW] === oW) return same ? '偏财' : '正财';
+  if(SS_KE[oW] === dW) return same ? '七杀' : '正官';
+  return same ? '偏印' : '正印';
+}
+
+const YUN_TXT = {
+  '正官':'规矩、责任、名分的事会找上门, 适合按流程推进、争取正式的身份。',
+  '七杀':'压力与机会一起来, 硬仗能打出结果, 但别硬扛到伤身。',
+  '正财':'钱的事宜稳不宜快, 正职收入与务实投入比投机靠谱。',
+  '偏财':'外来机会多, 花销也多; 进得活, 容易散, 记账为上。',
+  '正印':'适合学习、考证、被提携, 文书类的事顺。',
+  '偏印':'想法多、路子偏, 适合琢磨冷门本事, 忌三心二意。',
+  '食神':'表达、内容、手艺上有发挥; 日子别过成赶工。',
+  '伤官':'锋芒外露, 适合破局创新; 说话留三分, 免得得罪人。',
+  '比肩':'同辈往来密, 合作与竞争并存; 账目和边界先说清。',
+  '劫财':'人情与开销都旺; 帮人可以, 担保借贷慎签。'
+};
+
 const WANG_XING = {
   '木':'木气旺, 主仁而有进, 生机外放。注意别把计划排满到没给自己留喘息。',
   '火':'火气旺, 主礼而明快, 热在明处。燃得太旺时, 学学蜡烛而不是野火。',
@@ -9135,8 +9182,25 @@ function compute(){
     if(Math.abs(diff) >= 25) tsHint = '你出生地与北京时间差约 '+Math.abs(diff)+' 分钟, 若生于时辰交界处(前后约1小时), 建议按当地真太阳时核对时辰。';
   }
 
+  // 大运：顺逆由「年干阴阳 × 性别」定，缺性别就不排（不猜）
+  let yun = null;
+  if(gender === '男' || gender === '女'){
+    try{
+      const y = ec.getYun(gender === '男' ? 1 : 0, 1);
+      const list = y.getDaYun().map(d => ({
+        gz: d.getGanZhi(),
+        startYear: d.getStartYear(),
+        endYear: d.getEndYear(),
+        startAge: d.getStartAge(),
+        endAge: d.getEndAge(),
+        index: d.getIndex()
+      })).filter(d => d.gz && d.gz.length === 2);
+      if(list.length) yun = { forward: y.isForward(), list };
+    }catch(err){ yun = null; }
+  }
+
   return {
-    y, m, dd, gender, name, hourKnown, solar, lunar: lunarObj, ec,
+    y, m, dd, gender, name, hourKnown, solar, lunar: lunarObj, ec, yun,
     yearGZ, monthGZ, dayGZ, timeGZ, ssGan,
     dayGan, dayZhuXing, deLing, ssName: ssGan.year,
     wxCount, nChars, caiXing, caiCount,
@@ -9218,6 +9282,48 @@ function render(R){
   requestAnimationFrame(() => requestAnimationFrame(() => {
     barsBox.querySelectorAll('.fill').forEach(f => { f.style.width = f.dataset.w + '%'; });
   }));
+
+  // 大运 / 流年
+  const yunBar = document.getElementById('rYunBar');
+  const yunNow = document.getElementById('rYunNow');
+  const yunSub = document.getElementById('rYunSub');
+  const thisYear = new Date().getFullYear();
+  if(!R.yun){
+    yunSub.textContent = '';
+    yunBar.innerHTML = '';
+    yunNow.innerHTML = R.gender
+      ? '<span class="ss">大运没排出来</span>, 刷新重试。'
+      : '起运顺逆由「年干阴阳 × 性别」决定 —— 补上性别再落一笺, 才能排大运。';
+  } else {
+    const list = R.yun.list;
+    const dayGanChar = GAN[R.dayGan];
+    const curIdx = list.findIndex(d => thisYear >= d.startYear && thisYear <= d.endYear);
+    yunSub.textContent = list[0].startAge + '岁起运 · ' + (R.yun.forward ? '顺行' : '逆行') + ' · 十年一步';
+    yunBar.innerHTML = list.map((d, i) =>
+      '<button type="button" class="yun-chip' + (i === curIdx ? ' on' : '') + '" data-i="' + i + '">'
+      + '<span class="a">' + d.startAge + '–' + d.endAge + '岁</span>'
+      + '<span class="g">' + d.gz + '</span>'
+      + '<span class="s">' + shiShenOf(dayGanChar, d.gz[0]) + '</span>'
+      + '</button>').join('');
+
+    const lnGz = L.Solar.fromYmdHms(thisYear, 7, 1, 12, 0, 0).getLunar().getYearInGanZhiByLiChun();
+    const lnSs = shiShenOf(dayGanChar, lnGz[0]);
+    const cur = curIdx >= 0 ? list[curIdx] : null;
+
+    function yunLine(d){
+      const ss = shiShenOf(dayGanChar, d.gz[0]);
+      return '大运 <b>' + d.gz + '</b>（' + d.startYear + '–' + d.endYear + '）· <span class="ss">' + ss + '</span>　' + (YUN_TXT[ss] || '');
+    }
+    yunNow.innerHTML = (cur ? yunLine(cur) + '<br>' : '')
+      + '流年 <b>' + thisYear + ' ' + lnGz + '</b> · <span class="ss">' + lnSs + '</span>　' + (YUN_TXT[lnSs] || '');
+
+    yunBar.onclick = function(e){
+      const b = e.target.closest('.yun-chip'); if(!b) return;
+      const d = list[+b.dataset.i];
+      yunNow.innerHTML = yunLine(d) + '<br>流年 <b>' + thisYear + ' ' + lnGz + '</b> · <span class="ss">' + lnSs + '</span>　' + (YUN_TXT[lnSs] || '');
+      yunBar.querySelectorAll('.yun-chip').forEach(function(c){ c.classList.toggle('on', c === b); });
+    };
+  }
 
   const V = buildVerdicts(R);
   document.getElementById('rMain').innerHTML =
