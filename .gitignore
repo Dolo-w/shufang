@@ -5,3 +5,6 @@ Thumbs.db
 # 本地测试页
 _*.html
 **/_*.html
+
+# 本地文案(不发布)
+xhs/
