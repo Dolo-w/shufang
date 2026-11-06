@@ -138,21 +138,21 @@
   }
   /* 订阅 */
   .closing{margin:40px auto 0;text-align:center;font-size:13.5px;color:#b3a586;letter-spacing:7px;text-indent:7px;opacity:.9}
-  .sub{display:flex;gap:8px;margin:26px auto 0;max-width:420px;width:100%}
-  .sub input{
+  .sub-form{display:flex;gap:8px;margin:26px auto 0;max-width:420px;width:100%}
+  .sub-form input{
     flex:1;min-width:0;background:rgba(245,238,218,.04);border:1px solid rgba(179,165,134,.28);
     border-radius:4px;padding:10px 12px;color:#e6dcc4;font-family:inherit;font-size:13px;
     outline:none;transition:border-color .15s;
   }
-  .sub input::placeholder{color:#8d8167}
-  .sub input:focus{border-color:rgba(179,165,134,.6)}
-  .sub button{
+  .sub-form input::placeholder{color:#8d8167}
+  .sub-form input:focus{border-color:rgba(179,165,134,.6)}
+  .sub-form button{
     background:transparent;border:1px solid rgba(179,165,134,.45);color:#c9b98f;
     border-radius:4px;padding:0 18px;font-family:inherit;font-size:13px;letter-spacing:2px;
     cursor:pointer;transition:background .15s,color .15s;
   }
-  .sub button:hover{background:rgba(179,165,134,.12);color:#f0e6cf}
-  .sub button:disabled{opacity:.5;cursor:default}
+  .sub-form button:hover{background:rgba(179,165,134,.12);color:#f0e6cf}
+  .sub-form button:disabled{opacity:.5;cursor:default}
   .sub-note{margin:8px auto 0;text-align:center;font-size:11.5px;color:#6f6552;letter-spacing:1px}
 
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -209,7 +209,7 @@
 
   <div class="closing">书房无所有，聊赠一纸春</div>
 
-  <form class="sub" id="subForm" method="post" action="/api/subscribe">
+  <form class="sub-form" id="subForm" method="post" action="/api/subscribe">
     <input type="email" name="email" placeholder="留个邮箱，有新工具时告诉你" autocomplete="email" required>
     <button type="submit">订 阅</button>
   </form>
@@ -248,4 +248,5 @@
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
 
