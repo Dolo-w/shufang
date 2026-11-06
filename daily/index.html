@@ -76,10 +76,39 @@
   .setup{display:none}
   .setup.on{display:block}
   .setup label{display:block;font-size:12.5px;color:#8d8167;letter-spacing:1px;margin-bottom:8px}
-  .setup input[type=date]{
-    width:100%;background:rgba(245,238,218,.04);border:1px solid rgba(179,165,134,.28);
-    border-radius:4px;padding:11px 12px;color:#e6dcc4;font-family:inherit;font-size:14px;
+  /* 国风日历盘 */
+  .dp{position:relative}
+  .dp-field{
+    width:100%;padding:11px 12px;font-family:inherit;font-size:14px;text-align:left;cursor:pointer;
+    color:#8d8167;letter-spacing:1px;background:rgba(245,238,218,.04);
+    border:1px solid rgba(179,165,134,.28);border-radius:4px;transition:border-color .15s;
   }
+  .dp-field.filled{color:#e6dcc4}
+  .dp-field:hover,.dp-field:focus{border-color:rgba(179,165,134,.6);outline:none}
+  .dp-panel{
+    position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:9;
+    background:linear-gradient(160deg,#f5eeda,#eee2c6);
+    border:1px solid #c9b785;border-radius:6px;padding:12px 12px 14px;
+    box-shadow:0 16px 40px rgba(0,0,0,.55);color:#2b2419;
+  }
+  .dp-head{display:flex;align-items:center;gap:4px;margin-bottom:10px}
+  .dp-title{flex:1;text-align:center;font-size:14px;color:#a4342a;letter-spacing:2px}
+  .dp-nav{
+    width:28px;height:28px;border:1px solid #c9b785;border-radius:4px;cursor:pointer;
+    background:rgba(255,252,244,.85);font-family:inherit;color:#6b5f49;font-size:14px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .dp-nav:hover{border-color:#a4342a;color:#a4342a}
+  .dp-week{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+  .dp-week span{text-align:center;font-size:10.5px;color:#2f4f52}
+  .dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .dp-day{
+    height:32px;padding:0;border:1px solid transparent;background:transparent;border-radius:4px;
+    font-family:inherit;font-size:13px;color:#2b2419;cursor:pointer;
+  }
+  .dp-day:hover{border-color:#c9b785;background:rgba(255,252,244,.95)}
+  .dp-day.on{background:linear-gradient(160deg,#b23c30,#8c2a21);color:#f8efdc;border-color:#8c2a21}
+  .dp-day.blank{visibility:hidden;pointer-events:none}
   .setup .hint{margin-top:10px;font-size:11.5px;color:#6f6552;line-height:1.8}
   .toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);
     background:rgba(35,29,20,.95);border:1px solid rgba(179,165,134,.35);color:#e6dcc4;
@@ -115,7 +144,10 @@
 
   <div class="setup" id="setup">
     <label>你的出生日期（日签只用日柱，不用时辰）</label>
-    <input type="date" id="fDate" min="1901-01-01" max="2026-12-31">
+    <div class="dp" id="dpWrap">
+      <button type="button" class="dp-field" id="dpField">点选出生日期</button>
+      <input type="hidden" id="fDate" value="">
+    </div>
     <div class="hint">在「一纸命笺」里填过的话，这里会自动带上；日柱按日期推算，23 点后出生者可能差一柱。</div>
     <div class="btns"><button class="btn" id="saveBtn">起 签</button></div>
   </div>
@@ -211,6 +243,7 @@
       + '<span class="ss">' + ss + '</span>';
     el('dYi').innerHTML = yi.map(function(x){ return '<li>'+x+'</li>'; }).join('');
     el('dJi').innerHTML = ji.map(function(x){ return '<li>'+x+'</li>'; }).join('');
+    el('dCols').style.display = 'flex';
     el('dLine').innerHTML = p.line + '<span class="sub2">' + relTxt + '</span>';
     el('dFoot').textContent = '日柱 ' + bGz + ' · 同一人同一天，永出此签';
 
@@ -225,13 +258,90 @@
     el('resetBtn').style.display = on ? 'none' : '';
   }
 
+  /* ---------- 国风日历盘 ---------- */
+  function initPicker(fieldId, inputId){
+    var field = el(fieldId), input = el(inputId), wrap = field.parentNode;
+    var panel = document.createElement('div');
+    panel.className = 'dp-panel'; panel.hidden = true;
+    panel.innerHTML =
+      '<div class="dp-head">' +
+        '<button type="button" class="dp-nav" data-nav="py">‹‹</button>' +
+        '<button type="button" class="dp-nav" data-nav="pm">‹</button>' +
+        '<div class="dp-title"></div>' +
+        '<button type="button" class="dp-nav" data-nav="nm">›</button>' +
+        '<button type="button" class="dp-nav" data-nav="ny">››</button>' +
+      '</div>' +
+      '<div class="dp-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>' +
+      '<div class="dp-days"></div>';
+    wrap.appendChild(panel);
+
+    var today = new Date();
+    var view = { y: today.getFullYear(), m: today.getMonth() };
+    var MIN = 1901, MAX = 2026;
+
+    function render(){
+      panel.querySelector('.dp-title').textContent = view.y + ' 年 ' + (view.m + 1) + ' 月';
+      var first = new Date(view.y, view.m, 1).getDay();
+      var days = new Date(view.y, view.m + 1, 0).getDate();
+      var html = '';
+      for(var i=0;i<first;i++) html += '<button type="button" class="dp-day blank"></button>';
+      var sel = input.value || '';
+      for(var d=1; d<=days; d++){
+        var v = view.y + '-' + (view.m+1<10?'0':'') + (view.m+1) + '-' + (d<10?'0':'') + d;
+        html += '<button type="button" class="dp-day' + (v === sel ? ' on' : '') + '" data-v="' + v + '">' + d + '</button>';
+      }
+      panel.querySelector('.dp-days').innerHTML = html;
+    }
+    function open(){
+      if(input.value){ var p = input.value.split('-').map(Number); view.y = p[0]; view.m = p[1]-1; }
+      render(); panel.hidden = false;
+    }
+    function close(){ panel.hidden = true; }
+
+    field.addEventListener('click', function(e){
+      e.stopPropagation();
+      panel.hidden ? open() : close();
+    });
+    panel.addEventListener('click', function(e){
+      e.stopPropagation();
+      var nav = e.target.closest('[data-nav]');
+      if(nav){
+        var k = nav.getAttribute('data-nav');
+        if(k === 'pm'){ view.m--; if(view.m < 0){ view.m = 11; view.y--; } }
+        if(k === 'nm'){ view.m++; if(view.m > 11){ view.m = 0; view.y++; } }
+        if(k === 'py') view.y--;
+        if(k === 'ny') view.y++;
+        if(view.y < MIN) view.y = MIN;
+        if(view.y > MAX) view.y = MAX;
+        render(); return;
+      }
+      var day = e.target.closest('.dp-day[data-v]');
+      if(day){
+        set(day.getAttribute('data-v'));
+        close();
+      }
+    });
+    document.addEventListener('click', function(){ close(); });
+
+    function set(v){
+      input.value = v;
+      var p = v.split('-').map(Number);
+      field.textContent = p[0] + ' 年 ' + p[1] + ' 月 ' + p[2] + ' 日';
+      field.classList.add('filled');
+    }
+    return { set: set };
+  }
+
+  var picker = initPicker('dpField', 'fDate');
+
   if(birth && birth.y && birth.m && birth.d){
-    el('fDate').value = birth.y + '-' + (birth.m<10?'0':'') + birth.m + '-' + (birth.d<10?'0':'') + birth.d;
+    picker.set(birth.y + '-' + (birth.m<10?'0':'') + birth.m + '-' + (birth.d<10?'0':'') + birth.d);
     render();
   } else {
     el('dDate').textContent = '还没有生辰';
     el('dGz').textContent = '';
     el('dYi').innerHTML = ''; el('dJi').innerHTML = '';
+    el('dCols').style.display = 'none';
     el('dLine').textContent = '填一个出生日期，就能出今日的签。';
     el('dFoot').textContent = '';
     showSetup(true);
