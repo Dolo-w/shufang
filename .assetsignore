@@ -4,3 +4,5 @@
 .assetsignore
 wrangler.jsonc
 wrangler.toml
+src
+src/**

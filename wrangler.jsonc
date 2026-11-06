@@ -2,8 +2,14 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "shufang",
   "compatibility_date": "2026-11-01",
+  "main": "src/worker.js",
   "assets": {
     "directory": ".",
-    "not_found_handling": "404-page"
-  }
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "kv_namespaces": [
+    { "binding": "SUBSCRIBERS", "id": "ccd4fba87b504484a5ae796e8ef05614" }
+  ]
 }
