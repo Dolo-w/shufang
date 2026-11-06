@@ -9,6 +9,17 @@ const json = (data, status = 200) =>
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
   });
 
+// token 优先取请求头（不出现在 URL 和访问日志里），其次取 query
+function tokenOf(request) {
+  const h = request.headers.get('x-export-token');
+  if (h) return h.trim();
+  return (new URL(request.url).searchParams.get('token') || '').trim();
+}
+
+function tokenOk(request, env) {
+  return Boolean(env.EXPORT_TOKEN) && tokenOf(request) === env.EXPORT_TOKEN;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -70,8 +81,7 @@ async function onSubscribe(request, env) {
 }
 
 async function onExport(request, env) {
-  const token = new URL(request.url).searchParams.get('token') || '';
-  if (!env.EXPORT_TOKEN || token !== env.EXPORT_TOKEN) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!tokenOk(request, env)) return json({ ok: false, error: 'forbidden' }, 403);
   if (!env.SUBSCRIBERS) return json({ ok: false, error: 'storage_not_configured' }, 503);
 
   const rows = [['email', 'subscribed_at', 'source']];
@@ -120,8 +130,7 @@ async function onHit(request, env, ctx) {
 }
 
 async function onStats(request, env) {
-  const token = new URL(request.url).searchParams.get('token') || '';
-  if (!env.EXPORT_TOKEN || token !== env.EXPORT_TOKEN) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!tokenOk(request, env)) return json({ ok: false, error: 'forbidden' }, 403);
   if (!env.SUBSCRIBERS) return json({ ok: false, error: 'storage_not_configured' }, 503);
 
   const day = new Date().toISOString().slice(0, 10);
