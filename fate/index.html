@@ -302,10 +302,13 @@
 
   /* 断语 */
   /* 大运 */
-  .yun{margin:4px 4px 22px}
+  .yun{margin:4px 4px 22px;position:relative}
   .yun-h{font-size:13px;color:#6b5f49;letter-spacing:2px;margin-bottom:10px}
   .yun-h span{font-size:10.5px;color:#a89a79;letter-spacing:.5px;margin-left:8px}
-  .yun-bar{display:flex;gap:7px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
+  .yun-bar{display:flex;gap:7px;overflow-x:auto;padding:2px 2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+  .yun-bar::-webkit-scrollbar{display:none;height:0}
+  .yun::after{content:'';position:absolute;right:0;top:0;bottom:22px;width:44px;pointer-events:none;
+    background:linear-gradient(90deg,rgba(245,238,218,0),rgba(245,238,218,.92))}
   .yun-chip{flex:0 0 auto;min-width:66px;background:rgba(160,124,28,.05);border:1px solid rgba(160,124,28,.25);border-radius:4px;padding:7px 9px;font-family:inherit;cursor:pointer;text-align:center;line-height:1.45;color:#6b5f49;transition:background .15s,border-color .15s}
   .yun-chip .a{display:block;font-size:10px;color:#9a8c6d;letter-spacing:.3px}
   .yun-chip .g{display:block;font-size:15px;color:#2b2419;letter-spacing:1px}
@@ -9751,6 +9754,7 @@ function showToast(msg){
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
 
 
 
