@@ -78,6 +78,18 @@
   .dp-day.on{background:linear-gradient(160deg,#b23c30,#8c2a21);color:#f8efdc;border-color:#8c2a21}
   .dp-day.blank{visibility:hidden;pointer-events:none}
 
+  /* 时辰盘 */
+  .hr-panel{padding:10px}
+  .hr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .hr-chip{border:1px solid #c9b785;border-radius:4px;background:rgba(255,252,244,.8);padding:6px 2px;font-family:inherit;cursor:pointer;line-height:1.2;color:#2b2419;text-align:center}
+  .hr-chip b{display:block;font-size:14px;font-weight:normal}
+  .hr-chip span{display:block;font-size:9px;color:#a89a79;margin-top:1px}
+  .hr-chip:hover{border-color:#a4342a}
+  .hr-chip.on{background:linear-gradient(160deg,#b23c30,#8c2a21);border-color:#8c2a21}
+  .hr-chip.on b{color:#f8efdc}
+  .hr-chip.on span{color:#f0dcc8}
+  .hr-unknown{grid-column:1 / -1;padding:7px 0}
+
   .btns{display:flex;gap:10px;margin-top:18px}
   .btn{
     flex:1;background:transparent;border:1px solid rgba(179,165,134,.45);color:#c9b98f;
@@ -141,7 +153,10 @@
         <input type="hidden" id="aDate" value="">
       </div>
       <label>时辰</label>
-      <select id="aHour"></select>
+      <div class="dp" id="aHourDp">
+        <button type="button" class="dp-field" id="aHourField">不知时辰</button>
+        <input type="hidden" id="aHour" value="-1">
+      </div>
     </div>
     <div class="who">
       <div class="t">乙 · 对方</div>
@@ -151,7 +166,10 @@
         <input type="hidden" id="bDate" value="">
       </div>
       <label>时辰</label>
-      <select id="bHour"></select>
+      <div class="dp" id="bHourDp">
+        <button type="button" class="dp-field" id="bHourField">不知时辰</button>
+        <input type="hidden" id="bHour" value="-1">
+      </div>
     </div>
   </div>
 
@@ -290,10 +308,51 @@
   var pickA = initPicker('aField', 'aDate');
   var pickB = initPicker('bField', 'bDate');
 
-  HOURS.forEach(function(h){ /* noop */ });
-  ['aHour','bHour'].forEach(function(id){
-    el(id).innerHTML = HOURS.map(function(h){ return '<option value="'+h[0]+'">'+h[1]+'</option>'; }).join('');
-  });
+  /* ---------- 时辰盘 ---------- */
+  function initHourPicker(fieldId, inputId){
+    var field = el(fieldId), input = el(inputId), wrap = field.parentNode;
+    var panel = document.createElement('div');
+    panel.className = 'dp-panel hr-panel'; panel.hidden = true;
+    var chips = HOURS.filter(function(h){ return h[0] !== '-1'; }).map(function(h){
+      var parts = h[1].split(' ');
+      var zhi = parts[0].replace('时', '');
+      var span = parts[1] || '';
+      return '<button type="button" class="hr-chip" data-v="' + h[0] + '">'
+        + '<b>' + zhi + '</b><span>' + span + '</span></button>';
+    }).join('');
+    panel.innerHTML = '<div class="hr-grid">' + chips
+      + '<button type="button" class="hr-chip hr-unknown" data-v="-1"><b>不 知</b><span>按三柱论</span></button></div>';
+    wrap.appendChild(panel);
+
+    function label(v){
+      var h = HOURS.filter(function(x){ return x[0] === String(v); })[0];
+      return h ? h[1] : '不知时辰';
+    }
+    function set(v){
+      input.value = String(v);
+      field.textContent = label(v);
+      field.classList.add('filled');
+      panel.querySelectorAll('.hr-chip').forEach(function(c){
+        c.classList.toggle('on', c.dataset.v === String(v));
+      });
+    }
+    field.addEventListener('click', function(e){
+      e.stopPropagation();
+      panel.hidden ? (panel.hidden = false) : (panel.hidden = true);
+    });
+    panel.addEventListener('click', function(e){
+      e.stopPropagation();
+      var b = e.target.closest('.hr-chip'); if(!b) return;
+      set(b.dataset.v);
+      panel.hidden = true;
+    });
+    document.addEventListener('click', function(){ panel.hidden = true; });
+    set('-1');
+    return { set: set };
+  }
+
+  var hourA = initHourPicker('aHourField', 'aHour');
+  var hourB = initHourPicker('bHourField', 'bHour');
 
   /* ---------- 排盘与合婚 ---------- */
   function person(dateVal, hourSel){
@@ -541,8 +600,8 @@
     var q = new URLSearchParams(location.search);
     var a = q.get('a'), b = q.get('b');
     if(!a || !b) return;
-    if(q.get('ah') !== null) el('aHour').value = q.get('ah');
-    if(q.get('bh') !== null) el('bHour').value = q.get('bh');
+    if(q.get('ah') !== null) hourA.set(q.get('ah'));
+    if(q.get('bh') !== null) hourB.set(q.get('bh'));
     pickA.set(a); pickB.set(b);
     var D = computeAll();
     if(D){ showResult(D); drawPoster(D); }
@@ -552,6 +611,8 @@
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
+
 
 
 
