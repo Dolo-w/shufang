@@ -465,17 +465,18 @@
     ctx.fillStyle='#8a7c5f'; ctx.font='22px '+KAI;
     ctx.fillText(D.rel, W/2, 950 + lines.slice(0,3).length*44 + 22);
 
-    // 落款 + 二维码
-    ctx.textAlign='left';
-    ctx.fillStyle='#6b5f49'; ctx.font='20px '+KAI;
-    ctx.fillText('一纸日签 谨制 · 一纸书房', 80, 1160);
-    ctx.fillStyle='#a89a79'; ctx.font='17px '+KAI;
-    ctx.fillText('dolow.dev/daily', 80, 1196);
-
+    // 二维码(左下) + 落款(右下)
     if(qrImg.complete && qrImg.naturalWidth){
-      var qs2 = 120, qh2 = qs2 * 700 / 600, qx2 = W - 78 - qs2, qy2 = 1008;
-      ctx.drawImage(qrImg, qx2, qy2, qs2, qh2);
+      var qs2 = 138, qx2 = 62, qy2 = 1036;
+      ctx.drawImage(qrImg, qx2, qy2, qs2, qs2);
     }
+    ctx.textAlign='right';
+    ctx.fillStyle='#6b5f49'; ctx.font='20px '+KAI;
+    ctx.fillText('一纸日签 谨制 · 一纸书房', W - 66, 1160);
+    ctx.fillStyle='#a89a79'; ctx.font='17px '+KAI;
+    ctx.fillText('dolow.dev/daily', W - 66, 1196);
+
+
   }
 
   el('savePngBtn').addEventListener('click', function(){
@@ -528,6 +529,8 @@
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
+
 
 
 

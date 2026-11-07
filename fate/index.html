@@ -9551,20 +9551,18 @@ function drawPoster(){
     ty2 += triLines[i].length*34 + 10;
   });
 
-  // ===== 落款(左) + 二维码(右, 与落款同一行带) =====
+  // ===== 二维码(左下, 与右上朱印呼应) + 落款(右下) =====
   const today = L.Solar.fromDate(new Date()).getLunar();
-  ctx.textAlign = 'left';
+  if(qrFate.complete && qrFate.naturalWidth){
+    const qs = 150, qx = 58, qy = footY - 72;
+    ctx.drawImage(qrFate, qx, qy, qs, qs);
+  }
+  ctx.textAlign = 'right';
   ctx.fillStyle = '#6b5f49'; ctx.font = '21px ' + KAI;
   const namePart = R.name ? R.name+' 亲览 · ' : '';
-  ctx.fillText(namePart + '岁次' + today.getYearInGanZhiByLiChun() + '年 ' + today.getMonthInChinese()+'月'+today.getDayInChinese()+'日', 66, footY);
+  ctx.fillText(namePart + '岁次' + today.getYearInGanZhiByLiChun() + '年 ' + today.getMonthInChinese()+'月'+today.getDayInChinese()+'日', W - 66, footY - 6);
   ctx.fillStyle = '#a89a79'; ctx.font = '16px ' + KAI;
-  ctx.fillText('一纸命笺 谨制 · ' + (WATERMARK || '本笺取材干支五行传统, 仅供文化娱乐参考'), 66, footY+30);
-
-  // 印式二维码(墨码 + 回纹 + 笺印)
-  if(qrFate.complete && qrFate.naturalWidth){
-    const qs = 132, qh = qs * 700 / 600, qx = W - 66 - qs, qy = footY - 54;
-    ctx.drawImage(qrFate, qx, qy, qs, qh);
-  }
+  ctx.fillText('一纸命笺 谨制 · ' + (WATERMARK || '本笺取材干支五行传统, 仅供文化娱乐参考'), W - 66, footY + 26);
 
   applySkin(ctx, W, H);
   document.getElementById('posterBox').style.display = 'block';
@@ -9753,6 +9751,8 @@ function showToast(msg){
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
+
 
 
 
