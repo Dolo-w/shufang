@@ -9388,7 +9388,7 @@ const WATERMARK = ''; // 引流水印: 如 '某号 · 扫码观笺', 默认留�
 
 /* 引流二维码(海报底部) */
 const qrFate = new Image();
-qrFate.src = '/assets/qr-fate.png';
+qrFate.src = '/assets/qr-fate.png?v=20261107';
 qrFate.onload = function(){ if(window._posterDrawn) drawPoster(); };
 
 /* 笺纸皮肤: 在画完之后做一层柔光叠色, 不逐处改色, 风险最小 */
@@ -9751,6 +9751,7 @@ function showToast(msg){
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
 
 
 

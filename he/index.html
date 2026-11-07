@@ -451,7 +451,7 @@
   el('imgTipClose').addEventListener('click', function(){ el('imgTip').style.display = 'none'; });
 
   /* ---------- 海报 ---------- */
-  var qrHe = new Image(); qrHe.src = '/assets/qr-he.png';
+  var qrHe = new Image(); qrHe.src = '/assets/qr-he.png?v=20261107';
   qrHe.onload = function(){ if(lastData) drawPoster(lastData); };
 
   function wrapLines(ctx, text, maxW){
@@ -552,6 +552,7 @@
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>
+
 
 
 
