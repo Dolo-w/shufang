@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>一纸书房 · 工具与笺</title>
-<meta name="description" content="一纸书房 —— 一些安静好用的小工具。同一生辰, 永出一笺。">
+<meta name="description" content="一纸书房 —— 架上之笺与架上之算。笺：生辰命书、日签宜忌、合婚合盘；算：LLM API 成本计算器、多轮对话账单模拟等开发者工具。同一生辰, 永出一笺。">
 <link rel="icon" href="/assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
@@ -13,19 +13,19 @@
 <meta name="theme-color" content="#191510">
 <link rel="canonical" href="https://dolow.dev/">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"一纸书房","url":"https://dolow.dev/","description":"一些安静好用的小工具。同一生辰，永出一笺。","inLanguage":"zh-CN"}
+{"@context":"https://schema.org","@type":"WebSite","name":"一纸书房","url":"https://dolow.dev/","description":"架上之笺与架上之算：生辰命书、日签宜忌、合婚合盘，以及 LLM API 成本计算器、多轮对话账单模拟等开发者工具。","inLanguage":"zh-CN"}
 </script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="一纸书房">
 <meta property="og:title" content="一纸书房 · 工具与笺">
-<meta property="og:description" content="一些安静好用的小工具。同一生辰，永出一笺。">
+<meta property="og:description" content="架上之笺与架上之算：玄学笺签与 LLM 成本工具，同一生辰，永出一笺。">
 <meta property="og:url" content="https://dolow.dev/">
 <meta property="og:image" content="https://dolow.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="一纸书房 · 工具与笺">
-<meta name="twitter:description" content="一些安静好用的小工具。同一生辰，永出一笺。">
+<meta name="twitter:description" content="架上之笺与架上之算：玄学笺签与 LLM 成本工具，同一生辰，永出一笺。">
 <meta name="twitter:image" content="https://dolow.dev/assets/og.png">
 <style>
   :root{
@@ -81,8 +81,9 @@
   /* 工具卡 */
   .shelf-title{
     text-align:center;color:#b3a586;font-size:12.5px;letter-spacing:6px;text-indent:6px;
-    margin-bottom:18px;
+    font-weight:normal;margin-top:38px;margin-bottom:18px;
   }
+  .shelf-div{max-width:420px;margin:40px auto 0;border-top:1px solid rgba(179,165,134,.28)}
   .cards{display:flex;flex-direction:column;gap:16px}
   .card{
     display:flex;align-items:center;gap:18px;
@@ -167,10 +168,9 @@
     <div class="orn"><i>◆</i></div>
   </header>
 
-  <div class="shelf-title">—— 架 上 工 具 ——</div>
+  <h2 class="shelf-title">—— 架 上 之 笺 ——</h2>
 
   <div class="cards">
-    <!-- 新增工具: 复制一个 <a class="card"> 改链接/名称/简介即可 -->
     <a class="card" href="/fate/" target="_blank" rel="noopener">
       <div class="icon">笺</div>
       <div class="body">
@@ -197,7 +197,12 @@
       </div>
       <div class="go">→</div>
     </a>
+  </div>
 
+  <div class="shelf-div"></div>
+  <h2 class="shelf-title">—— 架 上 之 算 ——</h2>
+
+  <div class="cards">
     <a class="card" href="/token-calc/" target="_blank" rel="noopener">
       <div class="icon teal">算</div>
       <div class="body">
@@ -220,7 +225,7 @@
       <div class="icon teal">谱</div>
       <div class="body">
         <div class="name">一纸工谱 <span class="st wip">酝酿中</span></div>
-        <div class="desc">下一件器物还在打磨。书房的书, 一本一本添。</div>
+        <div class="desc">下一件算具还在打磨。书房的书, 一本一本添。</div>
       </div>
     </div>
   </div>
