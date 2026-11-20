@@ -24,3 +24,15 @@
 
 /ctx-calc
   Cache-Control: public, max-age=0, must-revalidate
+
+/usage-audit/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/usage-audit
+  Cache-Control: public, max-age=0, must-revalidate
+
+/price-history/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/price-history
+  Cache-Control: public, max-age=0, must-revalidate

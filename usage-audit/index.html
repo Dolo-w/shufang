@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM 用量对账器 · usage 日志与账单核对工具</title>
+<meta name="description" content="粘贴 LLM API 的 usage 日志或账单 CSV，按模型汇总 token 用量与成本，自动核对账单金额与官方价格估算的差异，标出异常扣费。支持 GPT、Claude、DeepSeek、Qwen 等模型价格表。数据全程留在浏览器本地。">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#faf7f0">
+<link rel="canonical" href="https://dolow.dev/usage-audit/">
+<script type="application/ld+json"> {"@context":"https://schema.org","@type":"SoftwareApplication","name":"LLM 用量对账器","url":"https://dolow.dev/usage-audit/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"},"description":"粘贴 LLM API usage 日志或账单 CSV，按模型汇总 token 用量，用官方定价估算成本并与账单金额核对差异，标出异常扣费。纯浏览器本地处理，数据不上传。","inLanguage":"zh-CN"} </script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="一纸书房">
+<meta property="og:title" content="LLM 用量对账器 · usage 日志与账单核对">
+<meta property="og:description" content="粘贴 usage CSV，自动汇总 token 用量、估算成本、核对账单差异。数据不出浏览器。">
+<meta property="og:url" content="https://dolow.dev/usage-audit/">
+<style>
+:root{
+  --bg:#faf7f0; --card:#ffffff; --ink:#2b2620; --ink-soft:#6b6257;
+  --line:#e8e1d4; --accent:#1f5c54; --accent-soft:#e3efec;
+  --gold:#9a6b15; --danger:#a04030;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Georgia,"Songti SC","SimSun",serif;line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding:40px 20px 60px}
+header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase}
+h1{font-size:clamp(26px,4vw,36px);font-weight:600;margin-top:8px}
+.sub{color:var(--ink-soft);margin-top:8px;font-size:15px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:24px}
+.panel h2{font-size:16px;font-weight:600;margin-bottom:16px;color:var(--ink)}
+label{display:block;font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-bottom:6px}
+textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12.5px;background:var(--bg);color:var(--ink);resize:vertical;min-height:140px}
+textarea:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+.hint{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:6px}
+.btn{display:inline-block;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-family:inherit;margin-right:10px}
+.btn:hover{background:#17463f}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.summary .kpi{background:var(--bg);border-radius:8px;padding:12px 16px}
+.summary .kpi .k{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+.summary .kpi .v{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--ink);margin-top:4px}
+.summary .kpi .v.accent{color:var(--accent)}
+.summary .kpi .v.warn{color:var(--danger)}
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink-soft);text-align:left;padding:10px 8px;border-bottom:2px solid var(--ink);white-space:nowrap}
+td{padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num{font-family:var(--mono);font-size:13px}
+tr.warn td{background:#fdf3e7}
+tr.bad td{background:#fcebeb}
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;margin-left:6px}
+.badge.warn{background:#fdf3e7;color:var(--gold);border:1px solid var(--gold)}
+.badge.bad{background:#fcebeb;color:var(--danger);border:1px solid var(--danger)}
+.anomalies{margin-top:14px}
+.anomalies li{margin:6px 0 6px 18px;font-size:13.5px;color:var(--ink)}
+.anomalies li b{color:var(--danger)}
+.msg{font-family:var(--mono);font-size:13px;margin-top:10px;min-height:18px}
+.msg.ok{color:var(--accent)}
+.msg.err{color:var(--danger)}
+.prose{font-size:15px;color:var(--ink)}
+.prose p{margin-bottom:12px}
+.prose code{font-family:var(--mono);font-size:13px;background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--line)}
+details{border-bottom:1px solid var(--line);padding:14px 0}
+details summary{cursor:pointer;font-weight:600;font-size:15px}
+details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
+.foot{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+.foot a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">一纸书房 · 算具</div>
+    <h1>LLM 用量对账器</h1>
+    <p class="sub">把 usage 日志或账单 CSV 粘进来，按模型汇总 token 用量、用官方定价估算成本、和账单金额核对差异。<b>纯浏览器本地处理，数据不出你的设备。</b></p>
+  </header>
+
+  <div class="panel">
+    <h2>① 粘贴 usage / 账单记录</h2>
+    <label for="csvBox">CSV 或 TSV，第一行为表头。识别列名：model（模型名）、input_tokens / prompt_tokens、output_tokens / completion_tokens、cached_tokens（可选）、cost（账单金额，可选，美元）。</label>
+    <textarea id="csvBox" spellcheck="false" placeholder="model,input_tokens,output_tokens,cached_tokens,cost
+gpt-6.1-sol,12500,900,10000,0.0305
+gpt-6.1-sol,8200,1200,8000,0.0242
+deepseek-v4-flash,15000,600,0,0.012"></textarea>
+    <div class="hint" style="margin-bottom:12px">行数不限，千分位逗号会自动处理。cached_tokens 按子集口径处理（OpenAI 风格：cached 包含在 input_tokens 内）。</div>
+    <button class="btn" id="auditBtn" type="button">开始对账</button>
+    <button class="btn ghost" id="demoBtn" type="button">填入示例数据</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel" id="outPanel" hidden>
+    <h2>② 对账结果</h2>
+    <div class="summary" id="kpis"></div>
+    <div class="tblwrap">
+      <table>
+        <thead><tr>
+          <th>模型</th><th>请求数</th><th>输入 tokens</th><th>缓存命中</th><th>输出 tokens</th><th>账单金额</th><th>估算成本</th><th>差异</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="anomalyBox" class="anomalies" hidden>
+      <h2 style="margin-top:20px">异常与提示</h2>
+      <ul id="anomalies"></ul>
+    </div>
+  </div>
+
+  <div class="panel prose">
+    <h2>对账口径</h2>
+    <p>估算成本 = <code>Σ[(输入 − 缓存命中) × 输入原价 + 缓存命中 × 缓存价 + 输出 × 输出价] ÷ 1,000,000</code>。价格取自 <a href="/token-calc/">本站价格表</a>（2026-11 抓自各厂官方定价页），人民币定价按 ¥7 = $1 折算。缓存命中按子集口径处理：cached_tokens 通常包含在 input_tokens 之内（OpenAI 的 prompt_tokens_details 口径）。</p>
+    <p>差异分级：与账单偏差 <b>±5% 以内</b>视为正常（浮点与舍入）；<b>5%~20% 标记为警告</b>；<b>超过 20% 标记为异常</b>。常见的非作弊差异来源：夜间/闲时折扣、Batch 批处理接口半价、定价表滞后于厂商调价、按月阶梯或订阅抵扣。先排除这些，再怀疑重复计费。</p>
+  </div>
+
+  <div class="panel">
+    <h2>常见问题</h2>
+    <details open>
+      <summary>为什么要自己拿 usage 日志对账？</summary>
+      <p>账单是厂商算给你的总数，usage 是每一次请求的原始计量。两边核对才能发现：重复计费、缓存未生效却按原价扣、模型用错档位（该走轻量的走了旗舰）、以及团队/Agent 滥用。做 Agent 的团队尤其建议按周对账——上下文重发让单次成本波动极大，只看月账单发现不了问题。</p>
+    </details>
+    <details>
+      <summary>我的日志数据会被上传吗？</summary>
+      <p>不会。解析、汇总、估算全部在你的浏览器里完成，本页没有任何网络请求发送日志内容。关掉页面数据就没了。</p>
+    </details>
+    <details>
+      <summary>模型名匹配不上怎么办？</summary>
+      <p>日志里的模型名（如 <code>gpt-6.1-sol-2026-08-15</code>）会模糊匹配价格表里的型号基名；匹配不上的行会单独列出、跳过估算（不猜价格）。也可以在模型列直接写本站价格表中的名称（见<a href="/token-calc/">成本计算器</a>）。</p>
+    </details>
+    <details>
+      <summary>Anthropic 的 cache_creation_input_tokens 怎么算？</summary>
+      <p>Anthropic 口径里 cache_creation 与 cache_read 是独立字段，与 OpenAI 的子集口径不同。本页把它们都归入「缓存命中」按缓存价估算，方向是保守的（实际写入价可能更高），细粒度核对请以厂商账单为准。</p>
+    </details>
+  </div>
+
+  <p class="foot">一纸书房 · 算具 —— <a href="/token-calc/">成本计算器</a> · <a href="/ctx-calc/">多轮对话模拟器</a> · <a href="/price-history/">价格变动史</a> · <a href="/">返回书房</a> · 仅供核对参考，以厂商账单为准</p>
+</div>
+
+<script>
+const USD = "USD", CNY = "CNY", RATE = 7; // ¥7 = $1
+// price: [输入, 输出] 每百万 token，原币；cache: 缓存命中输入价（null=按原价）
+const MODELS = [
+  {n:"GPT-6 Astra",       v:"OpenAI",    c:USD, p:[10.00,50.00], cache:1.00},
+  {n:"GPT-6.1 Sol",       v:"OpenAI",    c:USD, p:[2.00,10.00], cache:0.10},
+  {n:"GPT-6.1 Terra",     v:"OpenAI",    c:USD, p:[1.00,5.00], cache:0.05},
+  {n:"GPT-6 Luna",        v:"OpenAI",    c:USD, p:[0.10,0.50], cache:0.01},
+  {n:"Claude Fable 5.2",  v:"Anthropic", c:USD, p:[8.00,40.00], cache:0.20},
+  {n:"Claude Opus 5.5",   v:"Anthropic", c:USD, p:[4.00,20.00], cache:0.20},
+  {n:"Claude Sonnet 5.5", v:"Anthropic", c:USD, p:[2.00,10.00], cache:0.10},
+  {n:"Claude Haiku 5.5",  v:"Anthropic", c:USD, p:[0.10,0.50], cache:0.01},
+  {n:"Gemini 4 Carbon",   v:"Google",    c:USD, p:[2.00,10.00], cache:null},
+  {n:"Gemini 3.8 Flash",  v:"Google",    c:USD, p:[0.75,3.75], cache:null},
+  {n:"Gemini 3.5 Flash Lite", v:"Google", c:USD, p:[0.30,2.50], cache:null},
+  {n:"DeepSeek V4 Pro",   v:"DeepSeek",  c:CNY, p:[9,27], cache:0.30},
+  {n:"DeepSeek V4 Flash", v:"DeepSeek",  c:CNY, p:[2,8], cache:0.04},
+  {n:"Qwen3.8 Max",       v:"阿里通义",   c:CNY, p:[12,36], cache:null},
+  {n:"Qwen3.7 Plus",      v:"阿里通义",   c:CNY, p:[2,8], cache:null},
+  {n:"Qwen3.8 Flash",     v:"阿里通义",   c:CNY, p:[0.8,2.7], cache:null},
+  {n:"Kimi K3.1 Pro",     v:"月之暗面",   c:CNY, p:[13,68], cache:null},
+  {n:"GLM-5.3",           v:"智谱",       c:CNY, p:[8,28], cache:null},
+  {n:"GLM-5.3 Flash",     v:"智谱",       c:CNY, p:[0.8,2.8], cache:null},
+  {n:"豆包 Seed 2.1 Turbo", v:"字节·火山方舟", c:CNY, p:[3,15], cache:null},
+  {n:"豆包 1.6 Flash",     v:"字节·火山方舟", c:CNY, p:[0.15,1.5], cache:null},
+  {n:"MiniMax M3.1 Flash", v:"MiniMax",   c:CNY, p:[1,4], cache:null},
+];
+// 常见日志名 → 价格表模型（小写关键词匹配兜底）
+const ALIAS = {
+  "gpt-6.1-sol":"GPT-6.1 Sol", "gpt-6.1-terra":"GPT-6.1 Terra", "gpt-6-luna":"GPT-6 Luna",
+  "gpt-6-astra":"GPT-6 Astra", "claude-fable":"Claude Fable 5.2", "claude-opus":"Claude Opus 5.5",
+  "claude-sonnet":"Claude Sonnet 5.5", "claude-haiku":"Claude Haiku 5.5",
+  "gemini-4-carbon":"Gemini 4 Carbon", "gemini-3.8-flash":"Gemini 3.8 Flash", "gemini-3.5-flash-lite":"Gemini 3.5 Flash Lite",
+  "deepseek-v4-pro":"DeepSeek V4 Pro", "deepseek-v4-flash":"DeepSeek V4 Flash", "deepseek-chat":"DeepSeek V4 Flash", "deepseek-reasoner":"DeepSeek V4 Pro",
+  "qwen3.8-max":"Qwen3.8 Max", "qwen3.7-plus":"Qwen3.7 Plus", "qwen3.8-flash":"Qwen3.8 Flash", "qwen-max":"Qwen3.8 Max", "qwen-plus":"Qwen3.7 Plus", "qwen-flash":"Qwen3.8 Flash",
+  "kimi-k3.1-pro":"Kimi K3.1 Pro", "kimi-k3.1":"Kimi K3.1 Pro", "glm-5.3-flash":"GLM-5.3 Flash", "glm-5.3":"GLM-5.3", "glm-5":"GLM-5.3",
+  "doubao-seed-2.1":"豆包 Seed 2.1 Turbo", "doubao-seed-2.1-turbo":"豆包 Seed 2.1 Turbo", "doubao-1.6-flash":"豆包 1.6 Flash", "doubao":"豆包 Seed 2.1 Turbo",
+  "minimax-m3.1":"MiniMax M3.1 Flash", "minimax":"MiniMax M3.1 Flash",
+};
+function norm(s){ return String(s||"").toLowerCase().trim(); }
+function sig(s){ return norm(s).replace(/[^a-z0-9\u4e00-\u9fff]/g,""); } // 去掉点/横杠等，gpt-6.1-sol 与 gpt-6-1-sol 同一签名
+function matchModel(name){
+  const key = norm(name).replace(/[_\s]/g,"-").replace(/-\d{4}-\d{2}-\d{2}$/,"").replace(/-\d{8}$/,"").replace(/@.*$/,"").replace(/:latest$/,"");
+  if(ALIAS[key]) return MODELS.find(m=>m.n===ALIAS[key]);
+  const s = sig(name);
+  let m = MODELS.find(x=>sig(x.n)===s);
+  if(m) return m;
+  m = MODELS.find(x=>{ const xs=sig(x.n); return s.length>=4 && (s.includes(xs) || xs.includes(s)); });
+  return m || null;
+}
+
+// CSV/TSV 解析（支持引号内分隔符）
+function parseDelimited(text){
+  const t = text.replace(/^\uFEFF/,"").trim();
+  if(!t) return null;
+  const lines = t.split(/\r?\n/).filter(l=>l.trim());
+  const delim = (lines[0].match(/\t/g)||[]).length > (lines[0].match(/,/g)||[]).length ? "\t" : ",";
+  const rows = [];
+  let cur = [], field = "", inQ = false;
+  for(const line of lines){
+    for(let i=0;i<line.length;i++){
+      const ch = line[i];
+      if(inQ){
+        if(ch === '"'){ if(line[i+1] === '"'){ field+='"'; i++; } else inQ=false; }
+        else field += ch;
+      }else{
+        if(ch === '"') inQ = true;
+        else if(ch === delim){ cur.push(field); field=""; }
+        else field += ch;
+      }
+    }
+    if(inQ){ field += "\n"; continue; } // 引号内换行
+    cur.push(field); field=""; cur = cur.map(f=>f.trim());
+    rows.push(cur); cur = [];
+  }
+  return {header: rows[0]||[], data: rows.slice(1)};
+}
+function pickCol(header, candidates){
+  const h = header.map(norm);
+  for(const c of candidates){
+    const i = h.findIndex(x=>x===c);
+    if(i>=0) return i;
+  }
+  for(const c of candidates){
+    const i = h.findIndex(x=>x.includes(c));
+    if(i>=0) return i;
+  }
+  return -1;
+}
+function num(s){
+  if(s===undefined||s===null||s==="") return 0;
+  const v = parseFloat(String(s).replace(/[,\s¥$]/g,""));
+  return isNaN(v)?0:v;
+}
+
+const DEMO = `model,input_tokens,output_tokens,cached_tokens,cost
+gpt-6.1-sol,12500,900,10000,0.0152
+gpt-6.1-sol,8200,1200,8000,0.0134
+gpt-6.1-sol,6100,450,6000,0.0053
+gpt-6.1-sol,10000,500,9000,0.0900
+deepseek-v4-flash,15000,600,12000,0.0016
+deepseek-v4-flash,22000,800,18000,0.0022
+claude-sonnet-5-5,9800,1400,8500,0.0175
+qwen3.8-flash,5000,300,0,0.0007
+unknown-model-x,3000,200,0,0.0050`;
+
+document.getElementById("demoBtn").addEventListener("click",()=>{
+  document.getElementById("csvBox").value = DEMO;
+});
+
+document.getElementById("auditBtn").addEventListener("click",()=>{
+  const msg = document.getElementById("msg");
+  msg.className = "msg";
+  const parsed = parseDelimited(document.getElementById("csvBox").value);
+  if(!parsed || !parsed.data.length){ msg.textContent="没有解析到数据行——先粘贴 CSV 或点「填入示例数据」。"; msg.classList.add("err"); return; }
+  const {header, data} = parsed;
+  const iM = pickCol(header, ["model","模型","model_name","modelname"]);
+  const iIn = pickCol(header, ["input_tokens","prompt_tokens","输入tokens","input"]);
+  const iOut = pickCol(header, ["output_tokens","completion_tokens","输出tokens","output"]);
+  const iCache = pickCol(header, ["cached_tokens","cached_input_tokens","cache_read_input_tokens","cache"]);
+  const iCost = pickCol(header, ["cost","total_cost","金额","charge","amount"]);
+  if(iM<0 || iIn<0 || iOut<0){
+    msg.textContent="缺关键列：需要 model、input_tokens(prompt_tokens)、output_tokens(completion_tokens)。请检查表头行。"; msg.classList.add("err"); return;
+  }
+
+  const groups = new Map(); // key: 原始模型名 → 汇总
+  const unmatched = new Map();
+  let totalCost = 0, totalEst = 0, totalReq = 0;
+  const hasCost = iCost>=0;
+
+  for(const row of data){
+    if(row.length<2) continue;
+    const name = row[iM] || "(空)";
+    const inTok = num(row[iIn]), outTok = num(row[iOut]);
+    let cached = iCache>=0 ? num(row[iCache]) : 0;
+    if(cached > inTok) cached = inTok; // 子集口径保护
+    const bill = hasCost ? num(row[iCost]) : null;
+    const m = matchModel(name);
+    const g = groups.get(name) || {name, m, req:0, in:0, out:0, cached:0, bill:0, est:0, hasBill:false};
+    g.req++; g.in+=inTok; g.out+=outTok; g.cached+=cached;
+    if(bill!==null){ g.bill+=bill; g.hasBill=true; }
+    if(m){
+      const usd = m.c===USD?1:1/RATE;
+      const cachePrice = (m.cache!==null&&m.cache!==undefined)?m.cache:m.p[0];
+      g.est += ((inTok-cached)*m.p[0] + cached*cachePrice + outTok*m.p[1]) / 1e6 * usd;
+    }else{
+      unmatched.set(name,(unmatched.get(name)||0)+1);
+    }
+    groups.set(name,g);
+  }
+  const all = [...groups.values()];
+  all.forEach(g=>{ totalReq+=g.req; totalCost+=g.bill; totalEst+=g.est; });
+
+  // 渲染
+  document.getElementById("outPanel").hidden = false;
+  const diffPct = (hasCost && totalCost>0) ? (totalEst-totalCost)/totalCost*100 : null;
+  document.getElementById("kpis").innerHTML = `
+    <div class="kpi"><div class="k">请求总数</div><div class="v">${totalReq.toLocaleString()}</div></div>
+    <div class="kpi"><div class="k">累计输入</div><div class="v">${Math.round(all.reduce((s,g)=>s+g.in,0)).toLocaleString()}</div><div class="k">tokens</div></div>
+    <div class="kpi"><div class="k">累计输出</div><div class="v">${Math.round(all.reduce((s,g)=>s+g.out,0)).toLocaleString()}</div><div class="k">tokens</div></div>
+    <div class="kpi"><div class="k">估算总成本</div><div class="v accent">$${totalEst<0.01?totalEst.toExponential(1):totalEst.toFixed(totalEst>=100?0:2)}</div></div>
+    ${hasCost?`<div class="kpi"><div class="k">账单总金额</div><div class="v">$${totalCost.toFixed(totalCost>=100?0:2)}</div></div>
+    <div class="kpi"><div class="k">总差异</div><div class="v ${Math.abs(diffPct)>20?"warn":Math.abs(diffPct)>5?"warn":"accent"}">${diffPct>0?"+":""}${diffPct.toFixed(1)}%</div><div class="k">${Math.abs(diffPct)<=5?"正常区间":Math.abs(diffPct)<=20?"值得检查":"异常，见下方"}</div></div>`:""}`;
+
+  document.getElementById("tbody").innerHTML = all.map(g=>{
+    const diff = (g.hasBill && g.bill>0) ? (g.est-g.bill)/g.bill*100 : null;
+    const cls = diff===null ? "" : (Math.abs(diff)>20 ? "bad" : Math.abs(diff)>5 ? "warn" : "");
+    const badge = diff===null ? "" : `<span class="badge ${cls}">${diff>0?"+":""}${diff.toFixed(1)}%</span>`;
+    return `<tr class="${cls}">
+      <td>${g.name}<br><span style="font-family:var(--mono);font-size:11px;color:var(--ink-soft)">${g.m?("→ "+g.m.n+"（"+g.m.v+"）"):"未识别，跳过估算"}</span></td>
+      <td class="num">${g.req.toLocaleString()}</td>
+      <td class="num">${Math.round(g.in).toLocaleString()}</td>
+      <td class="num">${Math.round(g.cached).toLocaleString()}</td>
+      <td class="num">${Math.round(g.out).toLocaleString()}</td>
+      <td class="num">${g.hasBill?"$"+g.bill.toFixed(g.bill>=100?0:4):"—"}</td>
+      <td class="num">${g.m?"$"+g.est.toFixed(g.est>=100?0:4):"—"}</td>
+      <td class="num">${g.hasBill&&g.m?badge:"—"}</td>
+    </tr>`;
+  }).join("");
+
+  // 异常与提示
+  const an = [];
+  if(unmatched.size){
+    an.push(`<b>未识别模型</b>（已跳过估算）：${[...unmatched.entries()].map(([k,v])=>`${k}×${v}`).join("、")}——可到 token-calc 价格表确认是否有此型号。`);
+  }
+  if(hasCost){
+    all.filter(g=>g.m&&g.hasBill&&g.bill>0).forEach(g=>{
+      const d=(g.est-g.bill)/g.bill*100;
+      if(Math.abs(d)>20) an.push(`<b>${g.name}</b> 账单与估算差 ${d>0?"+":""}${d.toFixed(1)}%（超出 20%）：先排查 Batch 半价、闲时折扣、缓存价口径；若都排除且持续出现，向厂商工单核对是否存在重复计费。`);
+      else if(Math.abs(d)>5) an.push(`${g.name} 账单与估算差 ${d>0?"+":""}${d.toFixed(1)}%：多为缓存/折扣口径或价格表滞后，属可解释范围。`);
+    });
+  }else{
+    an.push("未提供 cost 列，本次只做了用量汇总与按官方价估算；想核对账单差异，在 CSV 里加上 cost 列再跑一次。");
+  }
+  if(all.some(g=>g.cached===0&&g.in>10000&&g.m&&g.m.cache!==null&&g.m.cache!==undefined)){
+    an.push("发现大输入量但缓存命中为 0 的请求——如果是 Agent/多轮场景，检查 Prompt Caching 是否真的开启（见 ctx-calc 模拟器，缓存常砍一半成本）。");
+  }
+  const box = document.getElementById("anomalyBox");
+  box.hidden = an.length===0;
+  document.getElementById("anomalies").innerHTML = an.map(x=>`<li>${x}</li>`).join("");
+  msg.textContent = `对账完成：${totalReq} 条请求，${all.length} 个模型分组。`;
+  msg.classList.add("ok");
+  document.getElementById("outPanel").scrollIntoView({behavior:"smooth"});
+});
+</script>
+</body>
+</html>

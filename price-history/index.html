@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM API 价格变动史 · 大模型定价调整追踪</title>
+<meta name="description" content="追踪主流大模型 API 定价变动：OpenAI、Anthropic、Google、DeepSeek、Qwen、Kimi、GLM、豆包、MiniMax 的涨价、降价与促销截止记录，每月核对更新。做成本预算前先看价格版本。">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#faf7f0">
+<link rel="canonical" href="https://dolow.dev/price-history/">
+<script type="application/ld+json"> {"@context":"https://schema.org","@type":"Dataset","name":"LLM API 价格变动史","url":"https://dolow.dev/price-history/","description":"主流大模型 API 定价变动的追踪记录：生效日期、模型、新旧价格、促销截止。涵盖 OpenAI、Anthropic、Google、DeepSeek、阿里通义、月之暗面、智谱、字节火山方舟、MiniMax。每月 1 日核对更新。","license":"https://dolow.dev/","creator":{"@type":"Organization","name":"一纸书房"},"temporalCoverage":"2026-11/..","inLanguage":"zh-CN"} </script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="一纸书房">
+<meta property="og:title" content="LLM API 价格变动史 · 定价调整追踪">
+<meta property="og:description" content="主流大模型 API 涨价、降价、促销截止的追踪记录，每月核对更新。">
+<meta property="og:url" content="https://dolow.dev/price-history/">
+<style>
+:root{
+  --bg:#faf7f0; --card:#ffffff; --ink:#2b2620; --ink-soft:#6b6257;
+  --line:#e8e1d4; --accent:#1f5c54; --accent-soft:#e3efec;
+  --gold:#9a6b15; --danger:#a04030;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Georgia,"Songti SC","SimSun",serif;line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding:40px 20px 60px}
+header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase}
+h1{font-size:clamp(26px,4vw,36px);font-weight:600;margin-top:8px}
+.sub{color:var(--ink-soft);margin-top:8px;font-size:15px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:24px}
+.panel h2{font-size:16px;font-weight:600;margin-bottom:16px;color:var(--ink)}
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink-soft);text-align:left;padding:10px 8px;border-bottom:2px solid var(--ink);white-space:nowrap}
+td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num{font-family:var(--mono);font-size:13px}
+td .note{font-size:12.5px;color:var(--ink-soft)}
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:4px;white-space:nowrap}
+.badge.up{background:#fcebeb;color:var(--danger);border:1px solid var(--danger)}
+.badge.down{background:#eaf3de;color:#3B6D11;border:1px solid #3B6D11}
+.badge.promo{background:#fdf3e7;color:var(--gold);border:1px solid var(--gold)}
+.badge.base{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+.vendor{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--ink-soft)}
+.prose{font-size:15px;color:var(--ink)}
+.prose p{margin-bottom:12px}
+.prose code{font-family:var(--mono);font-size:13px;background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--line)}
+details{border-bottom:1px solid var(--line);padding:14px 0}
+details summary{cursor:pointer;font-weight:600;font-size:15px}
+details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
+details a{color:var(--accent)}
+.foot{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+.foot a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">一纸书房 · 算具</div>
+    <h1>LLM API 价格变动史</h1>
+    <p class="sub">大模型定价一年调几轮，促销价常带截止日期。本页追踪各家 API 价格的涨价、降价与促销记录——<b>自 2026 年 11 月起，每月 1 日核对一次</b>。当前价目见 <a href="/token-calc/" style="color:var(--accent)">成本计算器</a>。</p>
+  </header>
+
+  <div class="panel">
+    <h2>变动记录（按生效日期倒序）</h2>
+    <div class="tblwrap">
+      <table>
+        <thead><tr>
+          <th>生效日期</th><th>厂商 / 模型</th><th>变动</th><th>明细</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="num">2026-12-01<span class="note">（已宣布，待生效）</span></td>
+            <td><span class="vendor">Google</span><br>Gemini 4 Carbon / Argon</td>
+            <td><span class="badge up">涨价</span></td>
+            <td>输入 $2 → <b>$4</b> / 百万 tokens；输出 $10 → <b>$20</b> / 百万 tokens。<span class="note">当前为发布促销价，促销 11 月 30 日截止。</span></td>
+          </tr>
+          <tr>
+            <td class="num">2026-11-30<span class="note">（已宣布，促销截止）</span></td>
+            <td><span class="vendor">OpenAI</span><br>GPT-5.6 Sol</td>
+            <td><span class="badge promo">促销截止</span></td>
+            <td>发布期促销定价于 11 月 30 日到期，之后恢复标准价。<span class="note">到期后本页将记录恢复后的标准价。</span></td>
+          </tr>
+          <tr>
+            <td class="num">2026-11-20</td>
+            <td><span class="vendor">全厂商</span><br>22 个模型</td>
+            <td><span class="badge base">建档</span></td>
+            <td>本站首次建档：OpenAI、Anthropic、Google、DeepSeek、阿里通义、月之暗面、智谱、字节火山方舟、MiniMax 共 22 个模型（旗舰/主力/轻量三档）的官方定价抓取入库。<span class="note">详见<a href="/token-calc/" style="color:var(--accent)">成本计算器</a>价格表。</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="hint" style="margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--ink-soft)">本页刚开张，历史越久越值钱——每月 1 日核对后追加记录。</div>
+  </div>
+
+  <div class="panel">
+    <h2>各厂官方定价页（核对本）</h2>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>厂商</th><th>定价页</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI</td><td class="num">openai.com/api/pricing</td><td class="note">按模型分页，促销价常标注截止日</td></tr>
+          <tr><td>Anthropic</td><td class="num">anthropic.com/pricing</td><td class="note">Claude 全系，含缓存价</td></tr>
+          <tr><td>Google</td><td class="num">ai.google.dev/pricing</td><td class="note">Gemini 全系，分免费/付费层</td></tr>
+          <tr><td>DeepSeek</td><td class="num">api-docs.deepseek.com</td><td class="note">含闲时折扣说明</td></tr>
+          <tr><td>阿里通义（百炼）</td><td class="num">aliyun.com → 百炼 → 模型定价</td><td class="note">新用户常有免费额度</td></tr>
+          <tr><td>月之暗面 Kimi</td><td class="num">platform.moonshot.cn</td><td class="note">按模型分层计价</td></tr>
+          <tr><td>智谱 GLM</td><td class="num">open.bigmodel.cn/pricing</td><td class="note">含 Flash 免费档活动</td></tr>
+          <tr><td>字节·火山方舟</td><td class="num">volcengine.com/product/ark</td><td class="note">豆包全系，按输入输出分别计价</td></tr>
+          <tr><td>MiniMax</td><td class="num">minimaxi.com</td><td class="note">开放平台定价页</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="hint" style="margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--ink-soft)">入口地址随官网改版可能变化，以各厂公告为准。</div>
+  </div>
+
+  <div class="panel prose">
+    <h2>为什么价格版本很重要</h2>
+    <p>做成本预算时，<b>用错价格版本是最常见的估算翻车原因</b>：发布促销价到期后悄悄恢复标准价（动辄翻倍）、闲时折扣只在特定时段生效、缓存价与原价差 10 倍——同一模型三个价格，看错一个，预算差一个量级。把价格当「带版本号的数据」来管理，是 AI 计量计费的基本功：先固定价目版本，再谈用量，账单才可解释。</p>
+    <p>本站的价格数据就是按这个思路维护的：<a href="/token-calc/">成本计算器</a>与<a href="/usage-audit/">用量对账器</a>共用同一张带日期的价目表，本页记录每一次变动——估算、对账、追溯三件事用的是同一个价格版本。</p>
+  </div>
+
+  <div class="panel">
+    <h2>常见问题</h2>
+    <details open>
+      <summary>数据从哪来，多久更新？</summary>
+      <p>价格抓取自各厂官方定价页与官方公告（2026-11-20 首次建档），每月 1 日核对一次；厂商中途宣布的调价（如促销截止）会按宣布的生效日期记录。本页只记录变动事实，不预测价格。</p>
+    </details>
+    <details>
+      <summary>为什么只有几条记录？</summary>
+      <p>因为本页 2026 年 11 月才开张，只收录建档之后确认的变动——不追溯编造历史价格。每过一个月记录就多一批，时间拉长后这里就是可引用的中文 LLM 定价变动时间线。</p>
+    </details>
+    <details>
+      <summary>估算工具应该用哪个价格？</summary>
+      <p>预算用「当前列表价」（见<a href="/token-calc/">成本计算器</a>，促销价会标注截止日）；对账用「账单当月生效价」；两者对不上时先查<a href="/price-history/">本页</a>是否恰好跨了一次调价。有争议时唯一权威是 API 返回的 usage 与厂商账单。</p>
+    </details>
+  </div>
+
+  <p class="foot">一纸书房 · 算具 —— <a href="/token-calc/">成本计算器</a> · <a href="/ctx-calc/">多轮对话模拟器</a> · <a href="/usage-audit/">用量对账器</a> · <a href="/">返回书房</a></p>
+</div>
+</body>
+</html>
