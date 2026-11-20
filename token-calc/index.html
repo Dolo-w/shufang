@@ -94,6 +94,17 @@ details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
         <input type="number" id="calls" value="30000" min="1">
       </div>
     </div>
+    <div style="margin-top:18px">
+      <label for="cacheRate">Prompt 缓存命中率：<b id="cacheVal">0%</b>（Agent/多轮对话场景常见 60%~90%）</label>
+      <input type="range" id="cacheRate" min="0" max="100" value="0" style="width:100%;accent-color:#1f5c54">
+      <div class="hint">命中的输入部分按各模型缓存价（通常为原价 5%~10%）计价；无公开缓存价的模型按原价计。</div>
+    </div>
+    <div style="margin-top:14px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="batchOn" style="width:auto;accent-color:#1f5c54">
+        <span style="font-family:var(--mono);font-size:13px;color:var(--ink)">走 Batch 批处理接口（行业普遍 5 折，适合离线任务）</span>
+      </label>
+    </div>
   </div>
 
   <div class="panel">
@@ -129,8 +140,8 @@ details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
 
   <div class="panel prose">
     <h2>计算方法</h2>
-    <p>成本公式很简单：<code>每月成本 = (输入 token × 输入单价 + 输出 token × 输出单价) × 调用次数 ÷ 1,000,000</code>。输入输出按各家官方「每百万 token」定价分别计价——输出价通常是输入价的 3~5 倍，所以账单大头一般是你生成的部分，不是你发送的部分。</p>
-    <p>统一口径：人民币定价按 <code>¥7 = $1</code> 折算为美元展示，原币价格同时列出。表中为列表价，未计入 Batch 批处理（行业普遍 5 折）与 Prompt Caching 缓存命中（普遍降至原价 5%~10%）的折扣——如果你的场景能用上这两项，实际账单还能明显更低；DeepSeek 另有夜间空闲时段半价。</p>
+    <p>成本公式：<code>每月成本 = (输入 token × 折后输入单价 + 输出 token × 输出单价) × 调用次数 ÷ 1,000,000</code>。输入输出按各家官方「每百万 token」定价分别计价——输出价通常是输入价的 3~5 倍，所以账单大头一般是你生成的部分，不是你发送的部分。</p>
+    <p>折扣说明：<b>Prompt Caching</b> 把重复发送的输入前缀（系统提示词、工具定义等）降到原价 5%~10%，用上面的滑块模拟命中率；<b>Batch 批处理</b>是离线任务专用接口，行业普遍 5 折（个别厂商略有差异，本页统一按 5 折估算）；DeepSeek 另有工作日夜间空闲时段约半价，可叠加 Batch 与缓存。缓存价未公开的模型（Google、Qwen、Kimi、GLM、豆包、MiniMax）按原价保守估算，实际可能更低。</p>
   </div>
 
   <div class="panel">
@@ -158,37 +169,41 @@ details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
 
 <script>
 const USD = "USD", CNY = "CNY", RATE = 7; // ¥7 = $1
-// price: [输入, 输出] 每百万 token，原币
+// price: [输入, 输出] 每百万 token，原币；cache: 缓存命中输入价（null=无公开数据，按原价）
 const MODELS = [
-  {n:"GPT-6 Astra",       v:"OpenAI",    t:"flag", c:USD, p:[10.00,50.00]},
-  {n:"GPT-6.1 Sol",       v:"OpenAI",    t:"main", c:USD, p:[2.00,10.00]},
-  {n:"GPT-6.1 Terra",     v:"OpenAI",    t:"lite", c:USD, p:[1.00,5.00]},
-  {n:"GPT-6 Luna",        v:"OpenAI",    t:"lite", c:USD, p:[0.10,0.50]},
-  {n:"Claude Fable 5.2",  v:"Anthropic", t:"flag", c:USD, p:[8.00,40.00]},
-  {n:"Claude Opus 5.5",   v:"Anthropic", t:"flag", c:USD, p:[4.00,20.00]},
-  {n:"Claude Sonnet 5.5", v:"Anthropic", t:"main", c:USD, p:[2.00,10.00]},
-  {n:"Claude Haiku 5.5",  v:"Anthropic", t:"lite", c:USD, p:[0.10,0.50]},
-  {n:"Gemini 4 Carbon",   v:"Google",    t:"flag", c:USD, p:[2.00,10.00]},
-  {n:"Gemini 3.8 Flash",  v:"Google",    t:"main", c:USD, p:[0.75,3.75]},
-  {n:"Gemini 3.5 Flash Lite", v:"Google", t:"lite", c:USD, p:[0.30,2.50]},
-  {n:"DeepSeek V4 Pro",   v:"DeepSeek",  t:"flag", c:CNY, p:[9,27]},
-  {n:"DeepSeek V4 Flash", v:"DeepSeek",  t:"main", c:CNY, p:[2,8]},
-  {n:"Qwen3.8 Max",       v:"阿里通义",   t:"flag", c:CNY, p:[12,36]},
-  {n:"Qwen3.7 Plus",      v:"阿里通义",   t:"main", c:CNY, p:[2,8]},
-  {n:"Qwen3.8 Flash",     v:"阿里通义",   t:"lite", c:CNY, p:[0.8,2.7]},
-  {n:"Kimi K3.1 Pro",     v:"月之暗面",   t:"flag", c:CNY, p:[13,68]},
-  {n:"GLM-5.3",           v:"智谱",       t:"flag", c:CNY, p:[8,28]},
-  {n:"GLM-5.3 Flash",     v:"智谱",       t:"lite", c:CNY, p:[0.8,2.8]},
-  {n:"豆包 Seed 2.1 Turbo", v:"字节·火山方舟", t:"main", c:CNY, p:[3,15]},
-  {n:"豆包 1.6 Flash",     v:"字节·火山方舟", t:"lite", c:CNY, p:[0.15,1.5]},
-  {n:"MiniMax M3.1 Flash", v:"MiniMax",   t:"lite", c:CNY, p:[1,4]},
+  {n:"GPT-6 Astra",       v:"OpenAI",    t:"flag", c:USD, p:[10.00,50.00], cache:1.00},
+  {n:"GPT-6.1 Sol",       v:"OpenAI",    t:"main", c:USD, p:[2.00,10.00], cache:0.10},
+  {n:"GPT-6.1 Terra",     v:"OpenAI",    t:"lite", c:USD, p:[1.00,5.00], cache:0.05},
+  {n:"GPT-6 Luna",        v:"OpenAI",    t:"lite", c:USD, p:[0.10,0.50], cache:0.01},
+  {n:"Claude Fable 5.2",  v:"Anthropic", t:"flag", c:USD, p:[8.00,40.00], cache:0.20},
+  {n:"Claude Opus 5.5",   v:"Anthropic", t:"flag", c:USD, p:[4.00,20.00], cache:0.20},
+  {n:"Claude Sonnet 5.5", v:"Anthropic", t:"main", c:USD, p:[2.00,10.00], cache:0.10},
+  {n:"Claude Haiku 5.5",  v:"Anthropic", t:"lite", c:USD, p:[0.10,0.50], cache:0.01},
+  {n:"Gemini 4 Carbon",   v:"Google",    t:"flag", c:USD, p:[2.00,10.00], cache:null},
+  {n:"Gemini 3.8 Flash",  v:"Google",    t:"main", c:USD, p:[0.75,3.75], cache:null},
+  {n:"Gemini 3.5 Flash Lite", v:"Google", t:"lite", c:USD, p:[0.30,2.50], cache:null},
+  {n:"DeepSeek V4 Pro",   v:"DeepSeek",  t:"flag", c:CNY, p:[9,27], cache:0.30},
+  {n:"DeepSeek V4 Flash", v:"DeepSeek",  t:"main", c:CNY, p:[2,8], cache:0.04},
+  {n:"Qwen3.8 Max",       v:"阿里通义",   t:"flag", c:CNY, p:[12,36], cache:null},
+  {n:"Qwen3.7 Plus",      v:"阿里通义",   t:"main", c:CNY, p:[2,8], cache:null},
+  {n:"Qwen3.8 Flash",     v:"阿里通义",   t:"lite", c:CNY, p:[0.8,2.7], cache:null},
+  {n:"Kimi K3.1 Pro",     v:"月之暗面",   t:"flag", c:CNY, p:[13,68], cache:null},
+  {n:"GLM-5.3",           v:"智谱",       t:"flag", c:CNY, p:[8,28], cache:null},
+  {n:"GLM-5.3 Flash",     v:"智谱",       t:"lite", c:CNY, p:[0.8,2.8], cache:null},
+  {n:"豆包 Seed 2.1 Turbo", v:"字节·火山方舟", t:"main", c:CNY, p:[3,15], cache:null},
+  {n:"豆包 1.6 Flash",     v:"字节·火山方舟", t:"lite", c:CNY, p:[0.15,1.5], cache:null},
+  {n:"MiniMax M3.1 Flash", v:"MiniMax",   t:"lite", c:CNY, p:[1,4], cache:null},
 ];
 const TAGS = {flag:"旗舰", main:"主力", lite:"轻量"};
 let filter = "all", sortKey = "month", sortDir = 1;
 
-function monthCost(m, inTok, outTok, calls){
+function monthCost(m, inTok, outTok, calls, cacheRate, batch){
   const usd = m.c === USD ? 1 : 1/RATE;
-  return (inTok*m.p[0] + outTok*m.p[1]) * calls / 1e6 * usd;
+  const cachePrice = (m.cache !== null && m.cache !== undefined) ? m.cache : m.p[0];
+  const effIn = m.p[0]*(1-cacheRate) + cachePrice*cacheRate; // 缓存命中的输入按缓存价
+  let cost = (inTok*effIn + outTok*m.p[1]) * calls / 1e6 * usd;
+  if(batch) cost *= 0.5;
+  return cost;
 }
 function fmt(n){ return n >= 100 ? n.toFixed(0) : n >= 1 ? n.toFixed(2) : n >= 0.01 ? n.toFixed(3) : n.toExponential(1); }
 function priceStr(m){
@@ -198,9 +213,11 @@ function priceStr(m){
 function render(){
   const inTok=+document.getElementById("inTok").value||0,
         outTok=+document.getElementById("outTok").value||0,
-        calls=Math.max(1,+document.getElementById("calls").value||1);
+        calls=Math.max(1,+document.getElementById("calls").value||1),
+        cacheRate=(+document.getElementById("cacheRate").value||0)/100,
+        batch=document.getElementById("batchOn").checked;
   let rows = MODELS.filter(m => filter==="all" || (filter==="intl"&&m.c===USD) || (filter==="cn"&&m.c===CNY))
-    .map(m => ({...m, once:monthCost(m,inTok,outTok,1), month:monthCost(m,inTok,outTok,calls)}));
+    .map(m => ({...m, once:monthCost(m,inTok,outTok,1,cacheRate,batch), month:monthCost(m,inTok,outTok,calls,cacheRate,batch)}));
   rows.sort((a,b)=>(a[sortKey]-b[sortKey])*sortDir);
   const min = rows.length ? rows.reduce((r,x)=>x.month<r.month?x:r).month : 0;
   document.getElementById("tbody").innerHTML = rows.map(m=>`
@@ -225,6 +242,10 @@ document.querySelectorAll(".filters button").forEach(b=>b.addEventListener("clic
   b.classList.add("on"); filter=b.dataset.f; render();
 }));
 ["inTok","outTok","calls"].forEach(id=>document.getElementById(id).addEventListener("input",render));
+document.getElementById("cacheRate").addEventListener("input",e=>{
+  document.getElementById("cacheVal").textContent=e.target.value+"%"; render();
+});
+document.getElementById("batchOn").addEventListener("change",render);
 document.getElementById("estBtn").addEventListener("click",()=>{
   const t=document.getElementById("pasteBox").value;
   const cjk=(t.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g)||[]).length;

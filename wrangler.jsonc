@@ -3,6 +3,9 @@
   "name": "shufang",
   "compatibility_date": "2026-11-01",
   "main": "src/worker.js",
+  "triggers": {
+    "crons": ["0 0 * * *"]  // UTC 00:00 = 北京时间每天 08:00，发「今日一笺」
+  },
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
