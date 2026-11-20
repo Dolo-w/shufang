@@ -92,9 +92,9 @@
     background:radial-gradient(700px 400px at 50% 0,rgba(164,52,42,.05),transparent 60%)}
   .inner{max-width:760px;margin:0 auto;position:relative}
 
-  .intro{text-align:center;margin-bottom:70px}
-  .intro .lead{font-family:var(--serif);font-size:22px;letter-spacing:.12em;color:#3a2f22}
-  .intro .sub{font-size:13px;color:#8b7a5d;letter-spacing:.18em;margin-top:12px}
+  .shelf-intro{text-align:center;margin-bottom:70px}
+  .shelf-intro .lead{font-family:var(--serif);font-size:22px;letter-spacing:.12em;color:#3a2f22}
+  .shelf-intro .sub{font-size:13px;color:#8b7a5d;letter-spacing:.18em;margin-top:12px}
 
   .shelf{margin-top:64px}
   .shelf-head{display:flex;align-items:center;gap:16px;margin-bottom:26px}
@@ -161,10 +161,58 @@
     .name{font-size:16px}
     .desc{font-size:12px}
   }
+  /* ===== 进场动画 ===== */
+  .intro{position:fixed;inset:0;z-index:50;background:linear-gradient(180deg,#17130e,#100d09);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transition:opacity .7s ease,visibility .7s}
+  .intro.hide{opacity:0;visibility:hidden;pointer-events:none}
+  .intro .i-line{width:min(560px,80vw);height:1px;margin-bottom:52px;
+    background:linear-gradient(90deg,transparent,rgba(179,147,90,.65),transparent);
+    transform:scaleX(0);animation:iLine .9s .15s cubic-bezier(.2,.8,.2,1) forwards}
+  .intro .i-seal{width:76px;height:76px;
+    background:linear-gradient(145deg,#b84132,#8d2a20);border-radius:5px;
+    display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;place-items:center;
+    font-size:20px;color:#f7ecdb;line-height:1;transform:rotate(-4deg);
+    box-shadow:0 6px 22px rgba(0,0,0,.55),inset 0 0 0 2px rgba(247,236,219,.28),inset 0 0 0 5px #8d2a20;
+    opacity:0;animation:iSeal .5s .95s cubic-bezier(.2,1.5,.4,1) forwards}
+  .intro .i-ripple{position:absolute;width:76px;height:76px;border:1px solid rgba(192,72,56,.7);border-radius:5px;
+    opacity:0;animation:iRipple .9s 1.4s ease-out forwards}
+  .intro .i-title{margin-top:30px;font-family:var(--serif);font-size:64px;letter-spacing:.2em;margin-right:-.2em;
+    background:linear-gradient(180deg,#fbf3df 25%,#cbb079 92%);-webkit-background-clip:text;background-clip:text;color:transparent;
+    display:flex}
+  .intro .i-title span{opacity:0;transform:translateY(14px);animation:iChar .5s cubic-bezier(.2,.8,.2,1) forwards}
+  .intro .i-title span:nth-child(1){animation-delay:1.55s}
+  .intro .i-title span:nth-child(2){animation-delay:1.68s}
+  .intro .i-title span:nth-child(3){animation-delay:1.81s}
+  .intro .i-title span:nth-child(4){animation-delay:1.94s}
+  .intro .i-tag{margin-top:20px;color:var(--muted);font-size:13px;letter-spacing:.5em;margin-right:-.5em;
+    opacity:0;animation:iFade .6s 2.2s ease forwards}
+  .intro .i-skip{position:absolute;bottom:38px;color:rgba(183,166,133,.45);font-size:11px;letter-spacing:.25em;
+    cursor:pointer;opacity:0;animation:iFade .6s 2.5s ease forwards}
+  .intro .i-skip:hover{color:#e7d5ab}
+  @keyframes iLine{to{transform:scaleX(1)}}
+  @keyframes iSeal{0%{opacity:0;transform:scale(1.5) rotate(9deg)}70%{opacity:1;transform:scale(.94) rotate(-5deg)}100%{opacity:1;transform:scale(1) rotate(-4deg)}}
+  @keyframes iRipple{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(3.2)}}
+  @keyframes iChar{to{opacity:1;transform:translateY(0)}}
+  @keyframes iFade{to{opacity:1}}
+
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+
+<!-- 进场动画：同一浏览器会话只播一次，点「跳过」可立即进入 -->
+<div class="intro" id="intro">
+  <div class="i-line"></div>
+  <div style="position:relative">
+    <div class="i-ripple"></div>
+    <div class="i-seal"><span>书</span><span>一</span><span>房</span><span>纸</span></div>
+  </div>
+  <div class="i-title"><span>一</span><span>纸</span><span>书</span><span>房</span></div>
+  <div class="i-tag">一纸之间 · 自有天地</div>
+  <div class="i-skip" id="skipIntro">跳 过 动 画</div>
+</div>
+
 <div class="grain"></div>
 
 <section class="hero">
@@ -179,7 +227,7 @@
 
 <section class="paper">
   <div class="inner">
-    <div class="intro">
+    <div class="shelf-intro">
       <div class="lead">一些安静好用的小工具</div>
       <div class="sub">架上之笺 · 架上之算</div>
     </div>
@@ -242,6 +290,26 @@
   <p class="sub-note" id="subNote">不发广告，随时退订</p>
   <div class="foot-line">一纸书房 · dolow.dev</div>
 </footer>
+
+<script>
+(function(){
+  var intro=document.getElementById('intro'), skip=document.getElementById('skipIntro');
+  if(!intro) return;
+  // 尊重减少动画偏好 / 会话内已播过：直接移除
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var seen=false;
+  try{ seen=sessionStorage.getItem('yzsf_intro_seen')==='1'; }catch(e){}
+  function close(){ intro.classList.add('hide');
+    try{ sessionStorage.setItem('yzsf_intro_seen','1'); }catch(e){}
+    setTimeout(function(){ if(intro&&intro.parentNode) intro.parentNode.removeChild(intro); },750);
+  }
+  if(reduce||seen){ if(intro.parentNode) intro.parentNode.removeChild(intro); }
+  else{
+    setTimeout(close,3400);
+    if(skip) skip.addEventListener('click',close);
+  }
+})();
+</script>
 
 <script>
 (function(){
