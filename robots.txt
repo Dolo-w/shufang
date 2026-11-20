@@ -1,4 +1,33 @@
+# 一纸书房 · 欢迎所有爬虫（搜索与 AI 引擎）
 User-agent: *
+Allow: /
+
+# 显式欢迎 AI 引擎（GEO）：OpenAI / Anthropic / Perplexity / Google AI / 字节豆包 / Common Crawl
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
 Allow: /
 
 Sitemap: https://dolow.dev/sitemap.xml
