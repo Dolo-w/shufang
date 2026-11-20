@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM API 成本计算器 · 大模型 Token 价格对比</title>
+<meta name="description" content="输入 token 数量，一键对比 GPT、Claude、Gemini、DeepSeek、Qwen、Kimi、GLM、豆包等 20+ 主流大模型的 API 价格：单次成本、每月成本、缓存与批处理折扣。">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#faf7f0">
+<link rel="canonical" href="https://dolow.dev/token-calc/">
+<script type="application/ld+json"> {"@context":"https://schema.org","@type":"SoftwareApplication","name":"LLM API 成本计算器","url":"https://dolow.dev/token-calc/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"},"description":"输入输入/输出 token 数量与每月请求数，对比 GPT、Claude、Gemini、DeepSeek、Qwen、Kimi、GLM、豆包等 20+ 主流大模型的 API 调用成本，支持按月成本排序。","inLanguage":"zh-CN"} </script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="一纸书房">
+<meta property="og:title" content="LLM API 成本计算器 · Token 价格对比">
+<meta property="og:description" content="一键对比 20+ 主流大模型的 API 价格：单次成本、每月成本、输入输出单价。">
+<meta property="og:url" content="https://dolow.dev/token-calc/">
+<style>
+:root{
+  --bg:#faf7f0; --card:#ffffff; --ink:#2b2620; --ink-soft:#6b6257;
+  --line:#e8e1d4; --accent:#1f5c54; --accent-soft:#e3efec;
+  --gold:#9a6b15; --danger:#a04030;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Georgia,"Songti SC","SimSun",serif;line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding:40px 20px 60px}
+header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase}
+h1{font-size:clamp(26px,4vw,36px);font-weight:600;margin-top:8px}
+.sub{color:var(--ink-soft);margin-top:8px;font-size:15px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:24px}
+.panel h2{font-size:16px;font-weight:600;margin-bottom:16px;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
+label{display:block;font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-bottom:6px}
+input[type=number],textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:15px;background:var(--bg);color:var(--ink)}
+input[type=number]:focus,textarea:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+textarea{resize:vertical;min-height:70px;font-size:13px}
+.hint{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:6px}
+.estimate{font-family:var(--mono);font-size:14px;color:var(--accent);margin-top:10px;min-height:20px}
+.btn{display:inline-block;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#17463f}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filters button{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 16px;font-family:var(--mono);font-size:13px;cursor:pointer;color:var(--ink-soft)}
+.filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink-soft);text-align:left;padding:10px 8px;border-bottom:2px solid var(--ink);white-space:nowrap;cursor:pointer;user-select:none}
+th .arrow{color:var(--accent)}
+td{padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num{font-family:var(--mono);font-size:13px}
+tr.cheapest td{background:var(--accent-soft)}
+tr.cheapest td:first-child::after{content:" ← 最省";color:var(--accent);font-family:var(--mono);font-size:11px}
+.vendor{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--ink-soft)}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:4px;margin-left:4px}
+.tag.flag{background:#f5e9d5;color:var(--gold)}
+.tag.main{background:var(--accent-soft);color:var(--accent)}
+.tag.lite{background:#eee;color:var(--ink-soft)}
+.prose{font-size:15px;color:var(--ink)}
+.prose p{margin-bottom:12px}
+.prose code{font-family:var(--mono);font-size:13px;background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--line)}
+details{border-bottom:1px solid var(--line);padding:14px 0}
+details summary{cursor:pointer;font-weight:600;font-size:15px}
+details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
+.foot{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+.foot a{color:var(--accent)}
+@media(max-width:600px){th,td{padding:8px 6px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">一纸书房 · 工具</div>
+    <h1>LLM API 成本计算器</h1>
+    <p class="sub">输入 token 数量，对比 GPT、Claude、Gemini、DeepSeek、Qwen、Kimi、GLM、豆包等 20+ 主流大模型的价格。同一个任务，选错模型可能贵 100 倍。</p>
+  </header>
+
+  <div class="panel">
+    <h2>① 你的用量</h2>
+    <div class="grid">
+      <div>
+        <label for="inTok">单次输入 tokens</label>
+        <input type="number" id="inTok" value="2000" min="0">
+      </div>
+      <div>
+        <label for="outTok">单次输出 tokens</label>
+        <input type="number" id="outTok" value="500" min="0">
+      </div>
+      <div>
+        <label for="calls">每月调用次数</label>
+        <input type="number" id="calls" value="30000" min="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>② 不知道多少 token？粘贴文本粗估</h2>
+    <textarea id="pasteBox" placeholder="把系统提示词 / 用户输入粘贴到这里…"></textarea>
+    <div class="hint">估算规则：中文约 1 字 = 1 token；英文约 4 字符 = 1 token。结果仅作粗略参考。</div>
+    <div class="estimate" id="estOut"></div>
+    <button class="btn" id="estBtn" type="button">估算并填入输入 tokens</button>
+  </div>
+
+  <div class="panel">
+    <h2>③ 成本对比（按每月成本排序）</h2>
+    <div class="filters">
+      <button class="on" data-f="all" type="button">全部</button>
+      <button data-f="intl" type="button">海外</button>
+      <button data-f="cn" type="button">国产</button>
+    </div>
+    <div class="tblwrap">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th data-k="name">模型</th>
+            <th data-k="in">输入价 /1M</th>
+            <th data-k="out">输出价 /1M</th>
+            <th data-k="once">单次成本</th>
+            <th data-k="month">每月成本</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel prose">
+    <h2>计算方法</h2>
+    <p>成本公式很简单：<code>每月成本 = (输入 token × 输入单价 + 输出 token × 输出单价) × 调用次数 ÷ 1,000,000</code>。输入输出按各家官方「每百万 token」定价分别计价——输出价通常是输入价的 3~5 倍，所以账单大头一般是你生成的部分，不是你发送的部分。</p>
+    <p>统一口径：人民币定价按 <code>¥7 = $1</code> 折算为美元展示，原币价格同时列出。表中为列表价，未计入 Batch 批处理（行业普遍 5 折）与 Prompt Caching 缓存命中（普遍降至原价 5%~10%）的折扣——如果你的场景能用上这两项，实际账单还能明显更低；DeepSeek 另有夜间空闲时段半价。</p>
+  </div>
+
+  <div class="panel">
+    <h2>常见问题</h2>
+    <details open>
+      <summary>token 是什么，怎么估算？</summary>
+      <p>token 是大模型计量的最小文本单位，大约 1 个汉字 ≈ 1~1.5 token，4 个英文字符 ≈ 1 token。精确数量以各厂 API 返回的 usage 字段为准，本页估算仅作预算参考。</p>
+    </details>
+    <details>
+      <summary>为什么输出比输入贵？</summary>
+      <p>生成文本的计算量远大于读入文本：每个输出 token 都要对全部上下文做一次完整推理。行业惯例输出价为输入价的 3~5 倍，控制输出长度是最直接的省钱手段。</p>
+    </details>
+    <details>
+      <summary>有哪些通用折扣可以叠加？</summary>
+      <p>几乎所有厂商提供两项：Batch 批处理接口统一约 5 折（适合离线任务）；Prompt Caching 把重复发送的系统提示词等前缀降到原价 5%~10%（适合 Agent 与多轮对话）。此外 DeepSeek 工作日深夜空闲时段输入输出均约半价。</p>
+    </details>
+    <details>
+      <summary>价格数据从哪来，多久更新？</summary>
+      <p>本页定价抓取自 OpenAI、Anthropic、Google、DeepSeek、阿里云、月之暗面、智谱、字节火山方舟、MiniMax 的官方定价页（2026 年 11 月）。各家调价频繁，实际计费请以官方页面为准。</p>
+    </details>
+  </div>
+
+  <p class="foot">一纸书房 · 工具与笺 —— <a href="/">返回书房</a> · 价格数据 2026-11 抓自各厂官方定价页，仅供预算参考</p>
+</div>
+
+<script>
+const USD = "USD", CNY = "CNY", RATE = 7; // ¥7 = $1
+// price: [输入, 输出] 每百万 token，原币
+const MODELS = [
+  {n:"GPT-6 Astra",       v:"OpenAI",    t:"flag", c:USD, p:[10.00,50.00]},
+  {n:"GPT-6.1 Sol",       v:"OpenAI",    t:"main", c:USD, p:[2.00,10.00]},
+  {n:"GPT-6.1 Terra",     v:"OpenAI",    t:"lite", c:USD, p:[1.00,5.00]},
+  {n:"GPT-6 Luna",        v:"OpenAI",    t:"lite", c:USD, p:[0.10,0.50]},
+  {n:"Claude Fable 5.2",  v:"Anthropic", t:"flag", c:USD, p:[8.00,40.00]},
+  {n:"Claude Opus 5.5",   v:"Anthropic", t:"flag", c:USD, p:[4.00,20.00]},
+  {n:"Claude Sonnet 5.5", v:"Anthropic", t:"main", c:USD, p:[2.00,10.00]},
+  {n:"Claude Haiku 5.5",  v:"Anthropic", t:"lite", c:USD, p:[0.10,0.50]},
+  {n:"Gemini 4 Carbon",   v:"Google",    t:"flag", c:USD, p:[2.00,10.00]},
+  {n:"Gemini 3.8 Flash",  v:"Google",    t:"main", c:USD, p:[0.75,3.75]},
+  {n:"Gemini 3.5 Flash Lite", v:"Google", t:"lite", c:USD, p:[0.30,2.50]},
+  {n:"DeepSeek V4 Pro",   v:"DeepSeek",  t:"flag", c:CNY, p:[9,27]},
+  {n:"DeepSeek V4 Flash", v:"DeepSeek",  t:"main", c:CNY, p:[2,8]},
+  {n:"Qwen3.8 Max",       v:"阿里通义",   t:"flag", c:CNY, p:[12,36]},
+  {n:"Qwen3.7 Plus",      v:"阿里通义",   t:"main", c:CNY, p:[2,8]},
+  {n:"Qwen3.8 Flash",     v:"阿里通义",   t:"lite", c:CNY, p:[0.8,2.7]},
+  {n:"Kimi K3.1 Pro",     v:"月之暗面",   t:"flag", c:CNY, p:[13,68]},
+  {n:"GLM-5.3",           v:"智谱",       t:"flag", c:CNY, p:[8,28]},
+  {n:"GLM-5.3 Flash",     v:"智谱",       t:"lite", c:CNY, p:[0.8,2.8]},
+  {n:"豆包 Seed 2.1 Turbo", v:"字节·火山方舟", t:"main", c:CNY, p:[3,15]},
+  {n:"豆包 1.6 Flash",     v:"字节·火山方舟", t:"lite", c:CNY, p:[0.15,1.5]},
+  {n:"MiniMax M3.1 Flash", v:"MiniMax",   t:"lite", c:CNY, p:[1,4]},
+];
+const TAGS = {flag:"旗舰", main:"主力", lite:"轻量"};
+let filter = "all", sortKey = "month", sortDir = 1;
+
+function monthCost(m, inTok, outTok, calls){
+  const usd = m.c === USD ? 1 : 1/RATE;
+  return (inTok*m.p[0] + outTok*m.p[1]) * calls / 1e6 * usd;
+}
+function fmt(n){ return n >= 100 ? n.toFixed(0) : n >= 1 ? n.toFixed(2) : n >= 0.01 ? n.toFixed(3) : n.toExponential(1); }
+function priceStr(m){
+  const sym = m.c === USD ? "$" : "¥";
+  return sym + m.p[0].toFixed(m.p[0]<1?2:2) + " / " + sym + m.p[1].toFixed(2);
+}
+function render(){
+  const inTok=+document.getElementById("inTok").value||0,
+        outTok=+document.getElementById("outTok").value||0,
+        calls=Math.max(1,+document.getElementById("calls").value||1);
+  let rows = MODELS.filter(m => filter==="all" || (filter==="intl"&&m.c===USD) || (filter==="cn"&&m.c===CNY))
+    .map(m => ({...m, once:monthCost(m,inTok,outTok,1), month:monthCost(m,inTok,outTok,calls)}));
+  rows.sort((a,b)=>(a[sortKey]-b[sortKey])*sortDir);
+  const min = rows.length ? rows.reduce((r,x)=>x.month<r.month?x:r).month : 0;
+  document.getElementById("tbody").innerHTML = rows.map(m=>`
+    <tr class="${m.month===min?"cheapest":""}">
+      <td>${m.n}<span class="tag ${m.t}">${TAGS[m.t]}</span><br><span class="vendor">${m.v}</span></td>
+      <td class="num">${priceStr(m).split(" / ")[0]}</td>
+      <td class="num">${priceStr(m).split(" / ")[1]}</td>
+      <td class="num">$${fmt(m.once)}</td>
+      <td class="num"><b>$${fmt(m.month)}</b></td>
+    </tr>`).join("");
+}
+document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.k;
+  if(k==="name")return;
+  sortDir = (sortKey===k) ? -sortDir : 1; sortKey=k;
+  document.querySelectorAll("th").forEach(x=>x.querySelector(".arrow")?.remove());
+  const a=document.createElement("span");a.className="arrow";a.textContent=sortDir>0?" ↑":" ↓";th.appendChild(a);
+  render();
+}));
+document.querySelectorAll(".filters button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".filters button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); filter=b.dataset.f; render();
+}));
+["inTok","outTok","calls"].forEach(id=>document.getElementById(id).addEventListener("input",render));
+document.getElementById("estBtn").addEventListener("click",()=>{
+  const t=document.getElementById("pasteBox").value;
+  const cjk=(t.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g)||[]).length;
+  const rest=t.length-cjk;
+  const tok=Math.round(cjk*1+rest/4);
+  document.getElementById("estOut").textContent=`估算：约 ${tok.toLocaleString()} tokens（中文 ${cjk} 字 + 其他 ${rest} 字符）`;
+  if(tok>0){document.getElementById("inTok").value=tok;render();}
+});
+render();
+</script>
+</body>
+</html>

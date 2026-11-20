@@ -9,3 +9,9 @@
 
 /fate
   Cache-Control: public, max-age=0, must-revalidate
+
+/token-calc/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/token-calc
+  Cache-Control: public, max-age=0, must-revalidate
