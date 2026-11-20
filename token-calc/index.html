@@ -108,11 +108,11 @@ details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
   </div>
 
   <div class="panel">
-    <h2>② 不知道多少 token？粘贴文本粗估</h2>
+    <h2>② 不知道多少 token？粘贴文本精确计数</h2>
     <textarea id="pasteBox" placeholder="把系统提示词 / 用户输入粘贴到这里…"></textarea>
-    <div class="hint">估算规则：中文约 1 字 = 1 token；英文约 4 字符 = 1 token。结果仅作粗略参考。</div>
+    <div class="hint">使用 OpenAI 官方 o200k_base 分词器精确计数（GPT-4o 及之后模型的编码）。首次点击加载词表约 2MB，之后秒出。其他厂商无公开分词器，OpenAI 编码是社区通行的近似基准。</div>
     <div class="estimate" id="estOut"></div>
-    <button class="btn" id="estBtn" type="button">估算并填入输入 tokens</button>
+    <button class="btn" id="estBtn" type="button">精确计数并填入输入 tokens</button>
   </div>
 
   <div class="panel">
@@ -142,13 +142,14 @@ details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
     <h2>计算方法</h2>
     <p>成本公式：<code>每月成本 = (输入 token × 折后输入单价 + 输出 token × 输出单价) × 调用次数 ÷ 1,000,000</code>。输入输出按各家官方「每百万 token」定价分别计价——输出价通常是输入价的 3~5 倍，所以账单大头一般是你生成的部分，不是你发送的部分。</p>
     <p>折扣说明：<b>Prompt Caching</b> 把重复发送的输入前缀（系统提示词、工具定义等）降到原价 5%~10%，用上面的滑块模拟命中率；<b>Batch 批处理</b>是离线任务专用接口，行业普遍 5 折（个别厂商略有差异，本页统一按 5 折估算）；DeepSeek 另有工作日夜间空闲时段约半价，可叠加 Batch 与缓存。缓存价未公开的模型（Google、Qwen、Kimi、GLM、豆包、MiniMax）按原价保守估算，实际可能更低。</p>
+    <p>Token 计数说明：粘贴文本采用 OpenAI 官方 o200k_base 分词器在浏览器本地<b>精确计数</b>（词表随页面本地加载，无需联网调用第三方，文本不出设备）。Claude、Gemini 等厂商分词器未公开，业界惯例以 OpenAI 编码作近似参考；最终计费请以 API 返回的 usage 字段为准。</p>
   </div>
 
   <div class="panel">
     <h2>常见问题</h2>
     <details open>
       <summary>token 是什么，怎么估算？</summary>
-      <p>token 是大模型计量的最小文本单位，大约 1 个汉字 ≈ 1~1.5 token，4 个英文字符 ≈ 1 token。精确数量以各厂 API 返回的 usage 字段为准，本页估算仅作预算参考。</p>
+      <p>token 是大模型计量的最小文本单位。本页粘贴文本计数使用 OpenAI 官方 <b>o200k_base</b> 分词器（GPT-4o 及之后模型采用的编码），在浏览器本地精确计算，不发送任何数据。各厂商分词器不公开，OpenAI 编码是社区通行的近似基准；最终计费以各厂 API 返回的 usage 字段为准。</p>
     </details>
     <details>
       <summary>为什么输出比输入贵？</summary>
@@ -246,13 +247,41 @@ document.getElementById("cacheRate").addEventListener("input",e=>{
   document.getElementById("cacheVal").textContent=e.target.value+"%"; render();
 });
 document.getElementById("batchOn").addEventListener("change",render);
-document.getElementById("estBtn").addEventListener("click",()=>{
-  const t=document.getElementById("pasteBox").value;
+// 精确计数：懒加载本地 vendored gpt-tokenizer (OpenAI o200k_base)，失败退回字符粗估
+let tkPromise=null;
+function loadTokenizer(){
+  if(globalThis.GPTTokenizer_o200k_base) return Promise.resolve(globalThis.GPTTokenizer_o200k_base);
+  if(!tkPromise){
+    tkPromise=new Promise((res,rej)=>{
+      const s=document.createElement("script");
+      s.src="./vendor/tokenizer.js";
+      s.onload=()=>res(globalThis.GPTTokenizer_o200k_base);
+      s.onerror=()=>{tkPromise=null;rej(new Error("tokenizer load failed"))};
+      document.head.appendChild(s);
+    });
+  }
+  return tkPromise;
+}
+function roughTokens(t){
   const cjk=(t.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g)||[]).length;
-  const rest=t.length-cjk;
-  const tok=Math.round(cjk*1+rest/4);
-  document.getElementById("estOut").textContent=`估算：约 ${tok.toLocaleString()} tokens（中文 ${cjk} 字 + 其他 ${rest} 字符）`;
-  if(tok>0){document.getElementById("inTok").value=tok;render();}
+  return {cjk, rough:Math.round(cjk*1+(t.length-cjk)/4)};
+}
+document.getElementById("estBtn").addEventListener("click",async()=>{
+  const t=document.getElementById("pasteBox").value;
+  const out=document.getElementById("estOut");
+  if(!t.trim()){out.textContent="先粘贴点文本再算。";return;}
+  const {cjk,rough}=roughTokens(t);
+  try{
+    out.textContent="正在加载精确分词器（首次约 2MB，之后走缓存秒出）…";
+    const tk=await loadTokenizer();
+    const tok=tk.encode(t).length;
+    out.textContent=`精确计数：${tok.toLocaleString()} tokens（o200k_base）｜字符粗估 ${rough.toLocaleString()}，供对照`;
+    document.getElementById("inTok").value=tok;
+  }catch(e){
+    out.textContent=`估算：约 ${rough.toLocaleString()} tokens（分词器加载失败，已退回字符粗估：中文 ${cjk.toLocaleString()} 字 + 其他 ${(t.length-cjk).toLocaleString()} 字符）`;
+    document.getElementById("inTok").value=rough;
+  }
+  render();
 });
 render();
 </script>

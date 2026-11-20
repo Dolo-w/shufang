@@ -15,3 +15,6 @@
 
 /token-calc
   Cache-Control: public, max-age=0, must-revalidate
+
+/token-calc/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
