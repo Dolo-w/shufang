@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多轮对话成本模拟器 · Agent API 账单估算</title>
+<meta name="description" content="模拟多轮对话与 AI Agent 的 API 账单：每轮重发全部上下文，成本随轮数滚雪球。对比 GPT、Claude、Gemini、DeepSeek、Qwen 等模型的整段对话总成本，支持 Prompt 缓存命中率模拟。">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#faf7f0">
+<link rel="canonical" href="https://dolow.dev/ctx-calc/">
+<script type="application/ld+json"> {"@context":"https://schema.org","@type":"SoftwareApplication","name":"多轮对话成本模拟器","url":"https://dolow.dev/ctx-calc/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"},"description":"模拟多轮对话与 AI Agent 场景的 API 成本：上下文每轮重发导致账单随轮数滚雪球，对比 20+ 主流大模型整段对话总成本与每月费用，支持 Prompt 缓存命中率模拟。","inLanguage":"zh-CN"} </script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="一纸书房">
+<meta property="og:title" content="多轮对话成本模拟器 · Agent API 账单估算">
+<meta property="og:description" content="Agent 每轮重发全部上下文，账单滚雪球。模拟整段对话成本，看看缓存命中率能省多少。">
+<meta property="og:url" content="https://dolow.dev/ctx-calc/">
+<style>
+:root{
+  --bg:#faf7f0; --card:#ffffff; --ink:#2b2620; --ink-soft:#6b6257;
+  --line:#e8e1d4; --accent:#1f5c54; --accent-soft:#e3efec;
+  --gold:#9a6b15; --danger:#a04030;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Georgia,"Songti SC","SimSun",serif;line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding:40px 20px 60px}
+header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase}
+h1{font-size:clamp(26px,4vw,36px);font-weight:600;margin-top:8px}
+.sub{color:var(--ink-soft);margin-top:8px;font-size:15px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:24px}
+.panel h2{font-size:16px;font-weight:600;margin-bottom:16px;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
+label{display:block;font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-bottom:6px}
+input[type=number]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:15px;background:var(--bg);color:var(--ink)}
+input[type=number]:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+.hint{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:6px}
+.btn{display:inline-block;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#17463f}
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink-soft);text-align:left;padding:10px 8px;border-bottom:2px solid var(--ink);white-space:nowrap;cursor:pointer;user-select:none}
+th .arrow{color:var(--accent)}
+td{padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num{font-family:var(--mono);font-size:13px}
+tr.cheapest td{background:var(--accent-soft)}
+tr.cheapest td:first-child::after{content:" ← 最省";color:var(--accent);font-family:var(--mono);font-size:11px}
+.vendor{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--ink-soft)}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:4px;margin-left:4px}
+.tag.flag{background:#f5e9d5;color:var(--gold)}
+.tag.main{background:var(--accent-soft);color:var(--accent)}
+.tag.lite{background:#eee;color:var(--ink-soft)}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.summary .kpi{background:var(--bg);border-radius:8px;padding:12px 16px}
+.summary .kpi .k{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+.summary .kpi .v{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--ink);margin-top:4px}
+.summary .kpi .v.accent{color:var(--accent)}
+.summary .kpi .v.warn{color:var(--danger)}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filters button{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 16px;font-family:var(--mono);font-size:13px;cursor:pointer;color:var(--ink-soft)}
+.filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.prose{font-size:15px;color:var(--ink)}
+.prose p{margin-bottom:12px}
+.prose code{font-family:var(--mono);font-size:13px;background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--line)}
+details{border-bottom:1px solid var(--line);padding:14px 0}
+details summary{cursor:pointer;font-weight:600;font-size:15px}
+details p{margin-top:10px;color:var(--ink-soft);font-size:14px}
+.foot{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+.foot a{color:var(--accent)}
+.legend{display:flex;gap:16px;margin-bottom:8px;font-size:12px;color:var(--ink-soft);font-family:var(--mono)}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend i{width:16px;height:3px;display:inline-block}
+@media(max-width:600px){th,td{padding:8px 6px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">一纸书房 · 工具</div>
+    <h1>多轮对话成本模拟器</h1>
+    <p class="sub">Agent 和聊天机器人的账单陷阱：每一轮都要把<b>全部历史上下文</b>重发一遍，成本随轮数滚雪球。模拟整段对话的 API 账单，看看 Prompt 缓存到底能省多少。</p>
+  </header>
+
+  <div class="panel">
+    <h2>① 你的 Agent / 对话形态</h2>
+    <div class="grid">
+      <div>
+        <label for="base">固定前缀 tokens（系统提示+工具定义）</label>
+        <input type="number" id="base" value="4000" min="0">
+      </div>
+      <div>
+        <label for="perTurn">每轮新增 tokens（用户消息+工具结果）</label>
+        <input type="number" id="perTurn" value="800" min="0">
+      </div>
+      <div>
+        <label for="outTok">每轮输出 tokens</label>
+        <input type="number" id="outTok" value="500" min="0">
+      </div>
+      <div>
+        <label for="rounds">一段对话轮数</label>
+        <input type="number" id="rounds" value="20" min="1" max="200">
+      </div>
+      <div>
+        <label for="daily">每天这样的对话数</label>
+        <input type="number" id="daily" value="50" min="1">
+      </div>
+    </div>
+    <div style="margin-top:18px">
+      <label for="cacheRate">Prompt 缓存命中率：<b id="cacheVal">80%</b>（Agent 场景常见 60%~90%）</label>
+      <input type="range" id="cacheRate" min="0" max="100" value="80" style="width:100%;accent-color:#1f5c54">
+      <div class="hint">每轮重发的历史前缀中，命中部分按各模型缓存价（原价 5%~10%）计价；无公开缓存价的模型按原价计。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>② 账单总览</h2>
+    <div class="summary" id="kpis"></div>
+    <div id="chartWrap" style="margin-top:8px">
+      <div class="legend">
+        <span><i style="background:#a04030"></i>不开缓存的累计成本</span>
+        <span><i style="background:#1f5c54"></i>按当前命中率开缓存</span>
+      </div>
+      <div style="width:100%;overflow-x:auto"><svg id="chart" viewBox="0 0 880 260" width="100%" style="min-width:600px"></svg></div>
+      <div class="hint" id="chartNote"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>③ 模型对比（按每月成本排序）</h2>
+    <div class="filters">
+      <button class="on" data-f="all" type="button">全部</button>
+      <button data-f="intl" type="button">海外</button>
+      <button data-f="cn" type="button">国产</button>
+    </div>
+    <div class="tblwrap">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>模型</th>
+            <th data-k="in">输入价 /1M</th>
+            <th data-k="out">输出价 /1M</th>
+            <th data-k="conv">单次对话总成本</th>
+            <th data-k="month">每月成本</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel prose">
+    <h2>计算方法</h2>
+    <p>多轮对话的计费陷阱在于：<b>上下文每轮重发</b>。第 <code>i</code> 轮发送的输入 = <code>固定前缀 + (i-1) × 每轮新增</code>——第 20 轮时，你可能已经把同一段系统提示词发了 19 遍。整段对话总成本 = <code>Σ(第 i 轮输入 × 折后输入价 + 第 i 轮输出 × 输出价)</code>，再乘以每天对话数 × 30 得到月账单。</p>
+    <p><b>Prompt Caching 是 Agent 场景的第一杠杆</b>：每轮重发的历史前缀里，与上一轮重复的部分可以按缓存价（原价 5%~10%）计费。用滑块调整命中率，观察账单曲线的变化——对固定前缀大、轮数多的 Agent，缓存常常砍掉一半以上账单。缓存价未公开的模型（Google、Qwen、Kimi、GLM、豆包、MiniMax）按原价保守估算，实际可能更低。</p>
+    <p>单次对话的成本还可以用 <a href="/token-calc/">单次调用成本计算器</a> 精算（支持粘贴文本用官方分词器精确计数）。本页模型定价抓自各厂官方定价页（2026 年 11 月），仅供预算参考，实际计费以 API 返回的 usage 字段为准。</p>
+  </div>
+
+  <div class="panel">
+    <h2>常见问题</h2>
+    <details open>
+      <summary>为什么 Agent 跑得越久，账单越贵？</summary>
+      <p>因为上下文每轮全量重发：第 i 轮的输入包含前 i-1 轮的所有消息和工具结果。一个 20 轮的对话，实际发送的输入 token 总量约为「末轮上下文 × 轮数 ÷ 2」——滚雪球就是从这个平方级增长来的。上下文越长，单价越高的旗舰模型账单放大越明显。</p>
+    </details>
+    <details>
+      <summary>Prompt Caching 真能省一半吗？</summary>
+      <p>对固定前缀大（长系统提示、大工具定义）且轮数多的 Agent，重发部分通常占总输入的 60%~90%，其中绝大部分是逐轮重复的前缀，可被缓存命中。按缓存价 5%~10% 计算，总输入成本常能降一半以上。前提是请求的前缀与上次完全一致（各家实现略有差异），且缓存有时效（如 5 分钟），间隔过久的会话可能失效。</p>
+    </details>
+    <details>
+      <summary>怎么快速降低多轮对话账单？</summary>
+      <p>按性价比排序：① 开 Prompt Caching（本页滑块模拟）；② 工具结果做裁剪/摘要，压住每轮新增量；③ 对历史做滚动截断，别无限带全文；④ 能用轻量模型收尾的轮次（如格式化输出）切小模型；⑤ 离线批量任务走 Batch 接口（约 5 折，见<a href="/token-calc/">成本计算器</a>的开关）。</p>
+    </details>
+    <details>
+      <summary>上下文长度和输入 tokens 是一回事吗？</summary>
+      <p>不是。上下文长度是模型单次能处理的容量上限（如 128K、256K tokens），输入 tokens 是你这一轮实际发送并计费的数量。模型支持长上下文 ≠ 便宜地用长上下文——容量是天花板，账单看的是每轮实际发送量。</p>
+    </details>
+  </div>
+
+  <p class="foot">一纸书房 · 工具与笺 —— <a href="/token-calc/">单次成本计算器</a> · <a href="/">返回书房</a> · 价格数据 2026-11 抓自各厂官方定价页，仅供预算参考</p>
+</div>
+
+<script>
+const USD = "USD", CNY = "CNY", RATE = 7; // ¥7 = $1
+// price: [输入, 输出] 每百万 token，原币；cache: 缓存命中输入价（null=无公开数据，按原价）
+const MODELS = [
+  {n:"GPT-6 Astra",       v:"OpenAI",    t:"flag", c:USD, p:[10.00,50.00], cache:1.00},
+  {n:"GPT-6.1 Sol",       v:"OpenAI",    t:"main", c:USD, p:[2.00,10.00], cache:0.10},
+  {n:"GPT-6.1 Terra",     v:"OpenAI",    t:"lite", c:USD, p:[1.00,5.00], cache:0.05},
+  {n:"GPT-6 Luna",        v:"OpenAI",    t:"lite", c:USD, p:[0.10,0.50], cache:0.01},
+  {n:"Claude Fable 5.2",  v:"Anthropic", t:"flag", c:USD, p:[8.00,40.00], cache:0.20},
+  {n:"Claude Opus 5.5",   v:"Anthropic", t:"flag", c:USD, p:[4.00,20.00], cache:0.20},
+  {n:"Claude Sonnet 5.5", v:"Anthropic", t:"main", c:USD, p:[2.00,10.00], cache:0.10},
+  {n:"Claude Haiku 5.5",  v:"Anthropic", t:"lite", c:USD, p:[0.10,0.50], cache:0.01},
+  {n:"Gemini 4 Carbon",   v:"Google",    t:"flag", c:USD, p:[2.00,10.00], cache:null},
+  {n:"Gemini 3.8 Flash",  v:"Google",    t:"main", c:USD, p:[0.75,3.75], cache:null},
+  {n:"Gemini 3.5 Flash Lite", v:"Google", t:"lite", c:USD, p:[0.30,2.50], cache:null},
+  {n:"DeepSeek V4 Pro",   v:"DeepSeek",  t:"flag", c:CNY, p:[9,27], cache:0.30},
+  {n:"DeepSeek V4 Flash", v:"DeepSeek",  t:"main", c:CNY, p:[2,8], cache:0.04},
+  {n:"Qwen3.8 Max",       v:"阿里通义",   t:"flag", c:CNY, p:[12,36], cache:null},
+  {n:"Qwen3.7 Plus",      v:"阿里通义",   t:"main", c:CNY, p:[2,8], cache:null},
+  {n:"Qwen3.8 Flash",     v:"阿里通义",   t:"lite", c:CNY, p:[0.8,2.7], cache:null},
+  {n:"Kimi K3.1 Pro",     v:"月之暗面",   t:"flag", c:CNY, p:[13,68], cache:null},
+  {n:"GLM-5.3",           v:"智谱",       t:"flag", c:CNY, p:[8,28], cache:null},
+  {n:"GLM-5.3 Flash",     v:"智谱",       t:"lite", c:CNY, p:[0.8,2.8], cache:null},
+  {n:"豆包 Seed 2.1 Turbo", v:"字节·火山方舟", t:"main", c:CNY, p:[3,15], cache:null},
+  {n:"豆包 1.6 Flash",     v:"字节·火山方舟", t:"lite", c:CNY, p:[0.15,1.5], cache:null},
+  {n:"MiniMax M3.1 Flash", v:"MiniMax",   t:"lite", c:CNY, p:[1,4], cache:null},
+];
+const TAGS = {flag:"旗舰", main:"主力", lite:"轻量"};
+let filter = "all", sortKey = "month", sortDir = 1;
+
+function params(){
+  return {
+    base: Math.max(0,+document.getElementById("base").value||0),
+    perTurn: Math.max(0,+document.getElementById("perTurn").value||0),
+    outTok: Math.max(0,+document.getElementById("outTok").value||0),
+    rounds: Math.min(200,Math.max(1,+document.getElementById("rounds").value||1)),
+    daily: Math.max(1,+document.getElementById("daily").value||1),
+    hit: (+document.getElementById("cacheRate").value||0)/100,
+  };
+}
+// 第 i 轮（1-based）输入 = base + (i-1)*per；与上轮重复前缀 = min(本轮输入, 上轮输入)
+function roundInput(i, p){ return p.base + (i-1)*p.perTurn; }
+function roundRepeat(i, p){ return i<=1 ? 0 : Math.min(roundInput(i,p), roundInput(i-1,p)); }
+// 一轮的输入成本（按缓存命中拆分），返回每百万token折算的美元成本
+function roundInCost(m, inTok, repeatTok, hit, usd){
+  const cachePrice = (m.cache !== null && m.cache !== undefined) ? m.cache : m.p[0];
+  const cached = repeatTok * hit;
+  return ((inTok - cached) * m.p[0] + cached * cachePrice) / 1e6 * usd;
+}
+// 单次对话总成本（美元），无缓存版本 hit=0
+function convCost(m, p, useCache){
+  const usd = m.c === USD ? 1 : 1/RATE;
+  let sum = 0;
+  for(let i=1;i<=p.rounds;i++){
+    const inTok = roundInput(i,p), repeat = roundRepeat(i,p);
+    sum += roundInCost(m, inTok, repeat, useCache?p.hit:0, usd);
+    sum += p.outTok * m.p[1] / 1e6 * usd;
+  }
+  return sum;
+}
+function fmt(n){ return n >= 100 ? n.toFixed(0) : n >= 1 ? n.toFixed(2) : n >= 0.01 ? n.toFixed(3) : n.toExponential(1); }
+function priceStr(m){
+  const sym = m.c === USD ? "$" : "¥";
+  return sym + m.p[0].toFixed(2) + " / " + sym + m.p[1].toFixed(2);
+}
+
+function render(){
+  const p = params();
+  const monthMul = p.daily * 30;
+  let rows = MODELS.filter(m => filter==="all" || (filter==="intl"&&m.c===USD) || (filter==="cn"&&m.c===CNY))
+    .map(m => ({...m, conv:convCost(m,p,true), convNo:convCost(m,p,false), month:convCost(m,p,true)*monthMul}));
+  rows.sort((a,b)=>(a[sortKey]-b[sortKey])*sortDir);
+  const min = rows.length ? Math.min(...rows.map(r=>r.month)) : 0;
+
+  document.getElementById("tbody").innerHTML = rows.map(m=>`
+    <tr class="${m.month===min?"cheapest":""}">
+      <td>${m.n}<span class="tag ${m.t}">${TAGS[m.t]}</span><br><span class="vendor">${m.v}</span></td>
+      <td class="num">${priceStr(m).split(" / ")[0]}</td>
+      <td class="num">${priceStr(m).split(" / ")[1]}</td>
+      <td class="num">$${fmt(m.conv)}（无缓存 $${fmt(m.convNo)}）</td>
+      <td class="num"><b>$${fmt(m.month)}</b></td>
+    </tr>`).join("");
+
+  // KPI：以最便宜模型为例
+  if(rows.length){
+    const best = rows.reduce((r,x)=>x.month<r.month?x:r);
+    const lastIn = roundInput(p.rounds, p);
+    let totIn=0, totRep=0;
+    for(let i=1;i<=p.rounds;i++){ totIn+=roundInput(i,p); totRep+=roundRepeat(i,p); }
+    const savePct = best.convNo>0 ? (1-best.conv/best.convNo)*100 : 0;
+    document.getElementById("kpis").innerHTML = `
+      <div class="kpi"><div class="k">末轮发送输入</div><div class="v">${lastIn.toLocaleString()}</div><div class="k">tokens</div></div>
+      <div class="kpi"><div class="k">单次对话累计输入</div><div class="v">${Math.round(totIn).toLocaleString()}</div><div class="k">tokens（重发 ${Math.round(totRep).toLocaleString()}）</div></div>
+      <div class="kpi"><div class="k">最省模型单次对话</div><div class="v accent">$${fmt(best.conv)}</div><div class="k">${best.n}</div></div>
+      <div class="kpi"><div class="k">缓存为您省下</div><div class="v accent">${savePct.toFixed(0)}%</div><div class="k">对比完全不开缓存</div></div>`;
+    drawChart(best, p);
+  }
+}
+
+// 累计成本曲线：最省模型 无缓存 vs 开缓存
+function drawChart(best, p){
+  const svg = document.getElementById("chart");
+  const W=880, H=260, L=64, R=16, T=16, B=40;
+  const cum = useCache => {
+    const usd = best.c === USD ? 1 : 1/RATE;
+    let s=0; const arr=[];
+    for(let i=1;i<=p.rounds;i++){
+      const inTok=roundInput(i,p), repeat=roundRepeat(i,p);
+      s += roundInCost(best, inTok, repeat, useCache?p.hit:0, usd) + p.outTok*best.p[1]/1e6*usd;
+      arr.push(s);
+    }
+    return arr;
+  };
+  const a1=cum(false), a2=cum(true);
+  const maxV=Math.max(...a1)*1.05||1;
+  const x=i=>L+(i-1)*(W-L-R)/Math.max(1,p.rounds-1);
+  const y=v=>T+(1-v/maxV)*(H-T-B);
+  const path=a=>a.map((v,i)=>`${i?"L":"M"}${x(i+1).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  let grid="", ylab="";
+  for(let g=0;g<=4;g++){
+    const v=maxV*g/4, yy=y(v);
+    grid+=`<line x1="${L}" y1="${yy.toFixed(1)}" x2="${W-R}" y2="${yy.toFixed(1)}" stroke="#e8e1d4" stroke-width="1"/>`;
+    ylab+=`<text x="${L-6}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#6b6257" font-family="monospace">$${v>=10?v.toFixed(0):v.toFixed(2)}</text>`;
+  }
+  let xlab="";
+  const step=Math.max(1,Math.round(p.rounds/8));
+  for(let i=1;i<=p.rounds;i+=step){
+    xlab+=`<text x="${x(i).toFixed(1)}" y="${H-B+16}" text-anchor="middle" font-size="11" fill="#6b6257" font-family="monospace">第${i}轮</text>`;
+  }
+  svg.innerHTML = `${grid}${ylab}${xlab}
+    <path d="${path(a1)}" fill="none" stroke="#a04030" stroke-width="2"/>
+    <path d="${path(a2)}" fill="none" stroke="#1f5c54" stroke-width="2"/>
+    <circle cx="${x(p.rounds)}" cy="${y(a1[a1.length-1])}" r="4" fill="#a04030"/>
+    <circle cx="${x(p.rounds)}" cy="${y(a2[a2.length-1])}" r="4" fill="#1f5c54"/>`;
+  document.getElementById("chartNote").textContent =
+    `${best.n}：${p.rounds} 轮对话累计 $${fmt(a1[a1.length-1])} → 开缓存后 $${fmt(a2[a2.length-1])}，每月 × ${p.daily}×30 次对话`;
+}
+
+document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.k;
+  sortDir = (sortKey===k) ? -sortDir : 1; sortKey=k;
+  document.querySelectorAll("th").forEach(x=>x.querySelector(".arrow")?.remove());
+  const a=document.createElement("span");a.className="arrow";a.textContent=sortDir>0?" ↑":" ↓";th.appendChild(a);
+  render();
+}));
+document.querySelectorAll(".filters button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".filters button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); filter=b.dataset.f; render();
+}));
+["base","perTurn","outTok","rounds","daily"].forEach(id=>document.getElementById(id).addEventListener("input",render));
+document.getElementById("cacheRate").addEventListener("input",e=>{
+  document.getElementById("cacheVal").textContent=e.target.value+"%"; render();
+});
+render();
+</script>
+</body>
+</html>
