@@ -57,7 +57,7 @@
   .topline{position:relative;width:min(560px,80vw);height:1px;margin-bottom:52px;
     background:linear-gradient(90deg,transparent,rgba(179,147,90,.55),transparent)}
 
-  .gate-seal{position:relative;width:84px;height:84px;cursor:pointer;
+  .gate-seal{position:relative;width:84px;height:84px;cursor:pointer;text-decoration:none;
     background:linear-gradient(145deg,#b84132,#8d2a20);border:0;border-radius:5px;
     display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;place-items:center;
     font-family:var(--serif);font-size:22px;color:#f7ecdb;line-height:1;transform:rotate(-4deg);
@@ -149,22 +149,22 @@
 
 <main class="gate" id="gate">
   <div class="topline"></div>
-  <button class="gate-seal" id="enterBtn" type="button" aria-label="进入一纸书房">
+  <a class="gate-seal" id="enterBtn" href="/tools/" aria-label="进入一纸书房，如果没有自动跳转请点击">
     <span>一</span><span>纸</span><span>书</span><span>房</span>
-  </button>
+  </a>
   <div class="gate-title">一纸书房</div>
   <div class="gate-hint">点 印 章 · 入 书 房</div>
 </main>
 
-<div class="intro" id="intro" aria-hidden="true">
-  <div class="i-line"></div>
-  <div style="position:relative">
+<div class="intro" id="intro">
+  <div class="i-line" aria-hidden="true"></div>
+  <div style="position:relative" aria-hidden="true">
     <div class="i-ripple"></div>
     <div class="i-seal"><span>一</span><span>纸</span><span>书</span><span>房</span></div>
   </div>
-  <div class="i-title"><span>一</span><span>纸</span><span>书</span><span>房</span></div>
-  <div class="i-tag">算 账 之 间 · 自 有 天 地</div>
-  <button class="i-skip" id="skipIntro" type="button">跳 过 动 画</button>
+  <div class="i-title" aria-hidden="true"><span>一</span><span>纸</span><span>书</span><span>房</span></div>
+  <div class="i-tag" aria-hidden="true">算 账 之 间 · 自 有 天 地</div>
+  <a class="i-skip" id="skipIntro" href="/tools/">跳 过 动 画</a>
 </div>
 
 <script>
@@ -173,10 +173,17 @@
       intro = document.getElementById('intro'),
       skip = document.getElementById('skipIntro'),
       target = '/tools/',
-      entered = false, timer = null;
-  function go(){ if(entered) return; entered = true; location.href = target; }
-  function play(){
-    if(entered) return;
+      started = false, timer = null;
+  function go(e){
+    if(e) e.preventDefault();
+    if(!started) return;
+    clearTimeout(timer);
+    location.href = target;
+  }
+  function play(e){
+    if(e) e.preventDefault();
+    if(started) return;       // 立即置位，双击不重复注册定时器
+    started = true;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(reduce){ go(); return; }
     intro.classList.add('on');
@@ -184,7 +191,7 @@
   }
   if(btn) btn.addEventListener('click', play);
   if(skip) skip.addEventListener('click', go);
-  document.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !entered) play(); });
+  // Enter 由 <a> 原生触发 click，无需全局 keydown 监听
 })();
 </script>
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>

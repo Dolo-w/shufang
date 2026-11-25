@@ -1,96 +1,128 @@
-// 用 Chrome CDP 真机视口验证：三页面无横向溢出 + 门页点击动画跳转
-// 用法：node tools/verify-ui.mjs [chromePath]
+// 门页改版验收：真机视口无溢出 + 动画跳转 + 目标页真实可达（不是只看 pathname）
+// 自起本地 HTTP 服务，不依赖外部进程。用法：node tools/verify-ui.mjs [chromePath]
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { join, extname, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\\/g, '/').replace(/\/$/, '');
 const CHROME = process.argv[2] || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-const PORT = 9444;
-const BASE = 'file:///D:/workspace/WorkBuddy/一纸书房-preview';
+const PORT = 0, CDP_PORT = 9446;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+
+// 自起静态服务（服务真实仓库文件，不用 probe 副本）
+const server = createServer(async (req, res) => {
+  try {
+    let p = decodeURIComponent(req.url.split('?')[0]);
+    if (p === '/' ) p = '/index.html';
+    else if (p.endsWith('/')) p += 'index.html';
+    const file = normalize(join(ROOT, p)).replace(/\\/g, '/');
+    if (!file.startsWith(ROOT)) { res.writeHead(403).end(); return; }
+    const body = await readFile(file);
+    res.writeHead(200, { 'content-type': MIME[extname(file)] || 'application/octet-stream' });
+    res.end(body);
+  } catch { res.writeHead(404, { 'content-type': 'text/plain' }).end('404'); }
+});
+await new Promise(r => server.listen(PORT, '127.0.0.1', r));
+const base = `http://127.0.0.1:${server.address().port}`;
 
 const chrome = spawn(CHROME, [
   '--headless=new', '--disable-gpu', '--no-first-run',
-  `--remote-debugging-port=${PORT}`,
-  '--user-data-dir=D:/workspace/WorkBuddy/一纸书房-preview/cdp-verify',
-  'about:blank'
+  `--remote-debugging-port=${CDP_PORT}`,
+  `--user-data-dir=${ROOT}/../一纸书房-preview/cdp-verify2`, 'about:blank'
 ], { stdio: 'ignore' });
 
 async function cdp() {
   for (let i = 0; i < 40; i++) {
     try {
-      const r = await fetch(`http://127.0.0.1:${PORT}/json/list`);
-      if (r.ok) {
-        const page = (await r.json()).find(t => t.type === 'page');
-        if (page) return page.webSocketDebuggerUrl;
-      }
+      const r = await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`);
+      if (r.ok) { const p = (await r.json()).find(t => t.type === 'page'); if (p) return p.webSocketDebuggerUrl; }
     } catch {}
     await sleep(250);
   }
   throw new Error('CDP 未启动');
 }
-
 function session(wsUrl) {
   const ws = new WebSocket(wsUrl);
   let id = 0; const wait = new Map();
   const ready = new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
-  ws.onmessage = e => {
-    const m = JSON.parse(e.data);
-    if (m.id && wait.has(m.id)) { wait.get(m.id)(m); wait.delete(m.id); }
-  };
-  const send = (method, params = {}) => new Promise(res => {
-    const n = ++id; wait.set(n, res); ws.send(JSON.stringify({ id: n, method, params }));
-  });
+  ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && wait.has(m.id)) { wait.get(m.id)(m); wait.delete(m.id); } };
+  const send = (method, params = {}) => new Promise(res => { const n = ++id; wait.set(n, res); ws.send(JSON.stringify({ id: n, method, params })); });
   return { ws, ready, send };
 }
 
 let fail = 0;
-const check = (ok, label, extra = '') => {
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${label}${extra ? ' | ' + extra : ''}`);
-  if (!ok) fail++;
-};
+const check = (ok, label, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} ${label}${extra ? ' | ' + extra : ''}`); if (!ok) fail++; };
+const ev = async (send, expr) => (await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true })).result?.result?.value;
 
 try {
-  const target = await cdp();
-  const { ws, ready, send } = session(target);
-  await ready;
-  await send('Page.enable');
-  await send('Runtime.enable');
+  const { ws, ready, send } = session(await cdp());
+  await ready; await send('Page.enable'); await send('Runtime.enable');
 
-  // 真机视口 360x780
-  await send('Emulation.setDeviceMetricsOverride', { width: 360, height: 780, deviceScaleFactor: 1, mobile: true });
-
-  for (const name of ['gate', 'tools', 'toolbox']) {
-    await send('Page.navigate', { url: `${BASE}/probe-${name}.html` });
-    await sleep(900);
-    const r = await send('Runtime.evaluate', {
-      expression: `({t:document.title,w:window.innerWidth,sw:document.documentElement.scrollWidth})`,
-      returnByValue: true
-    });
-    const v = r.result?.result?.value;
-    const m = v?.t?.match(/scrollW=(\d+)\|innerW=(\d+)/);
-    const sw = m ? +m[1] : v?.sw, iw = m ? +m[2] : v?.w;
-    check(sw <= iw + 1, `${name} 360px 无横向溢出`, `scrollW=${sw} innerW=${iw}`);
+  // 1) 真机视口：三页直接测真实 HTML，宽 360/320 都不许横向溢出
+  for (const w of [360, 320]) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: 780, deviceScaleFactor: 1, mobile: true });
+    for (const p of ['/', '/tools/', '/toolbox/']) {
+      await send('Page.navigate', { url: base + p });
+      await sleep(500);
+      const dims = await ev(send, `({w:window.innerWidth,sw:document.documentElement.scrollWidth,bw:document.body.scrollWidth})`);
+      check(dims && dims.sw <= dims.w + 1, `${p} @${w}px 无横向溢出`, dims ? `scrollW=${dims.sw} innerW=${dims.w}` : 'no data');
+    }
   }
 
-  // 门页点击跳转流程（用本地 HTTP 服务，让 /tools/ 真实可达）
-  await send('Page.navigate', { url: 'http://127.0.0.1:8899/index.html' });
-  await sleep(700);
-  const before = await send('Runtime.evaluate', { expression: `document.getElementById('intro').className`, returnByValue: true });
-  check(before.result?.result?.value === 'intro', '门页初始动画层未激活', `class=${before.result?.result?.value}`);
-  await send('Runtime.evaluate', { expression: `document.getElementById('enterBtn').click()` });
-  await sleep(400);
-  const during = await send('Runtime.evaluate', { expression: `document.getElementById('intro').className`, returnByValue: true });
-  check(during.result?.result?.value.includes('on'), '点击印章后动画层激活', `class=${during.result?.result?.value}`);
+  // 2) 目标页真实可达（P1-1 核心断言：不是只看 pathname）
+  const dest = await fetch(base + '/tools/');
+  const destHtml = await dest.text();
+  check(dest.status === 200 && destHtml.includes('LLM 成本计算器'), '跳转目标 /tools/ 真实返回200且含工具内容', `status=${dest.status}`);
+
+  // 3) 门页初始态：动画层未激活、印章是链接（无 JS 可降级）
+  await send('Page.navigate', { url: base + '/' });
+  await sleep(600);
+  check(await ev(send, `document.getElementById('intro').className`) === 'intro', '初始动画层未激活');
+  check(await ev(send, `document.getElementById('enterBtn').tagName`) === 'A', '印章是 <a> 链接（无JS可降级）');
+  check(await ev(send, `!!document.getElementById('enterBtn').getAttribute('href')`), '印章有真实 href');
+
+  // 4) 点击印章 → 动画激活 → 3.4s 后跳转，且落地页内容正确
+  await ev(send, `document.getElementById('enterBtn').click()`);
+  await sleep(300);
+  check((await ev(send, `document.getElementById('intro').className`)).includes('on'), '点击后动画激活');
   await sleep(3400);
-  const url = await send('Runtime.evaluate', { expression: `location.pathname`, returnByValue: true });
-  check(url.result?.result?.value.endsWith('/tools/'), '动画结束跳转到 /tools/', `path=${url.result?.result?.value}`);
+  const landed = await ev(send, `({path:location.pathname,title:document.title,h1:document.querySelector('h1')?.textContent||''})`);
+  check(landed.path === '/tools/' && landed.h1.includes('把 LLM 账单算清楚'), '动画后落到 /tools/ 且内容正确', `path=${landed.path} h1=${landed.h1}`);
+
+  // 5) 双击不重复注册定时器（P3-1）
+  await send('Page.navigate', { url: base + '/' });
+  await sleep(500);
+  await ev(send, `window.__goCount=0;var _s=setTimeout;window.setTimeout=function(f,t){if(t===3400)window.__goCount++;return _s.apply(this,arguments)};document.getElementById('enterBtn').click();document.getElementById('enterBtn').click()`);
+  await sleep(300);
+  check(await ev(send, `window.__goCount`) === 1, '双击只注册1个跳转定时器', `count=${await ev(send, 'window.__goCount')}`);
+
+  // 6) 跳过按钮立即跳
+  await send('Page.navigate', { url: base + '/' });
+  await sleep(500);
+  await ev(send, `document.getElementById('enterBtn').click()`);
+  await sleep(150);
+  await ev(send, `document.getElementById('skipIntro').click()`);
+  await sleep(400);
+  check(await ev(send, `location.pathname`) === '/tools/', '点跳过立即跳 /tools/');
+
+  // 7) reduced-motion 直接跳（不播动画）
+  await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+  await send('Page.navigate', { url: base + '/' });
+  await sleep(500);
+  await ev(send, `document.getElementById('enterBtn').click()`);
+  await sleep(400);
+  const rm = await ev(send, `({path:location.pathname,on:document.getElementById('intro')?.classList.contains('on')})`);
+  check(rm.path === '/tools/' && !rm.on, '减少动画偏好下直接跳且不播动画', `path=${rm.path} anim=${rm.on}`);
+  await send('Emulation.setEmulatedMedia', { features: [] });
 
   ws.close();
 } catch (e) {
-  console.error('ERROR', e.message);
-  fail++;
+  console.error('ERROR', e.stack || e.message); fail++;
 } finally {
-  chrome.kill();
+  chrome.kill(); server.close();
 }
 console.log(fail ? `\n${fail} 项失败` : '\n全部通过');
 process.exit(fail ? 1 : 0);
