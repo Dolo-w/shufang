@@ -57,6 +57,41 @@ let fail = 0;
 const check = (ok, label, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} ${label}${extra ? ' | ' + extra : ''}`); if (!ok) fail++; };
 const ev = async (send, expr) => (await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true })).result?.result?.value;
 
+// /tools/ 横排结构断言（堵三类回归：退回 grid / href 改错 / 图标挪到右边）
+async function checkToolsLayout(tag, expectThumbW, send) {
+  const L = await ev(send, `(() => {
+    const g = document.querySelector('.grid'), s = g ? getComputedStyle(g) : {};
+    const cards = [...document.querySelectorAll('.grid .card')];
+    return {
+      display: s.display, dir: s.flexDirection,
+      cards: cards.map(c => {
+        const b = c.getBoundingClientRect();
+        const t = c.querySelector('.thumb')?.getBoundingClientRect();
+        const d = c.querySelector('.body')?.getBoundingClientRect();
+        return { href: c.getAttribute('href'), top: +b.top.toFixed(1), left: +b.left.toFixed(1),
+          thumbW: t ? +t.width.toFixed(1) : -1, leftOk: !!(t && d && t.right <= d.left + 1) };
+      }),
+      svgs: [...document.querySelectorAll('.grid .thumb svg')].map(x => ({
+        vb: x.getAttribute('viewBox'), stroke: getComputedStyle(x).stroke,
+        pathOk: (() => {
+          const ps = [...x.querySelectorAll('path')];
+          return ps.length > 0 && ps.every(p => { try { return p.getTotalLength() > 0; } catch(e) { return false; } });
+        })()
+      }))
+    };
+  })()`);
+  check(L.display === 'flex' && L.dir === 'column', `${tag} .grid 纵向 flex`, `${L.display}/${L.dir}`);
+  check(L.cards.length === 4, `${tag} 四个工具卡`, `n=${L.cards.length}`);
+  check(JSON.stringify(L.cards.map(c => c.href)) === JSON.stringify(['/token-calc/', '/ctx-calc/', '/usage-audit/', '/price-history/']),
+    `${tag} 四卡 href 精确`, JSON.stringify(L.cards.map(c => c.href)));
+  check(L.cards.every((c, i) => i === 0 || (c.top > L.cards[i-1].top && Math.abs(c.left - L.cards[0].left) < 1)),
+    `${tag} 四卡垂直堆叠左对齐`, JSON.stringify(L.cards.map(c => [c.top, c.left])));
+  check(L.cards.every(c => c.leftOk), `${tag} 图标在文字左侧`, JSON.stringify(L.cards.map(c => c.leftOk)));
+  check(L.cards.every(c => Math.abs(c.thumbW - expectThumbW) < 0.6), `${tag} 图标宽 ${expectThumbW}px`, JSON.stringify(L.cards.map(c => c.thumbW)));
+  check(L.svgs.length === 4 && L.svgs.every(s => s.vb === '0 0 48 48' && s.stroke === 'rgb(164, 52, 42)' && s.pathOk),
+    `${tag} 四个 SVG 正常`, JSON.stringify(L.svgs));
+}
+
 try {
   const { ws, ready, send } = session(await cdp());
   await ready; await send('Page.enable'); await send('Runtime.enable');
@@ -69,8 +104,15 @@ try {
       await sleep(500);
       const dims = await ev(send, `({w:window.innerWidth,sw:document.documentElement.scrollWidth,bw:document.body.scrollWidth})`);
       check(dims && dims.sw <= dims.w + 1, `${p} @${w}px 无横向溢出`, dims ? `scrollW=${dims.sw} innerW=${dims.w}` : 'no data');
+      if (p === '/tools/') await checkToolsLayout(`${w}px`, 64, send);
     }
   }
+
+  // 1b) 桌面视口：横排结构同样成立（thumb 88px）
+  await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+  await send('Page.navigate', { url: base + '/tools/' });
+  await sleep(500);
+  await checkToolsLayout('桌面', 88, send);
 
   // 2) 目标页真实可达（P1-1 核心断言：不是只看 pathname）
   const dest = await fetch(base + '/tools/');
