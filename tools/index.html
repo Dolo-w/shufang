@@ -75,18 +75,6 @@
   .card p{font-size:13px;color:var(--ink2);line-height:1.68;max-width:720px}
   .card .path{display:block;margin-top:7px;font-family:var(--mono);font-size:11px;color:var(--cinnabar)}
 
-  .sub{margin:56px 0 40px;padding:24px;border:1px solid var(--line);border-radius:10px;background:#fff;
-    display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
-  .sub h2{font-family:'Songti SC','SimSun',serif;font-size:18px;font-weight:600}
-  .sub p{font-size:12px;color:var(--muted);margin-top:4px}
-  .sub form{display:flex;gap:8px;flex-wrap:wrap}
-  .sub input{border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-family:inherit;font-size:13px;
-    width:220px;outline:none;background:var(--paper)}
-  .sub input:focus{border-color:var(--cinnabar)}
-  .sub button{border:0;background:var(--cinnabar);color:#fff;border-radius:6px;padding:0 20px;
-    font-family:inherit;font-size:13px;cursor:pointer;transition:background .2s}
-  .sub button:hover{background:var(--cinnabar-lt)}
-
   .foot{border-top:1px solid var(--line);padding:24px 0 40px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
     font-size:12px;color:var(--muted)}
   .foot a{color:var(--muted)}
@@ -115,7 +103,6 @@
     <nav class="nav">
       <a class="box" href="/tools/">计算器</a>
       <a href="/toolbox/">工具箱</a>
-      <a href="#subscribe">订阅更新</a>
     </nav>
   </div>
 </header>
@@ -182,41 +169,12 @@
     </div>
   </section>
 
-  <section class="sub" id="subscribe">
-    <div>
-      <h2>订阅更新</h2>
-      <p>有新的价格变动或工具上线时，捎一封信给你。不发广告，随时退订。</p>
-    </div>
-    <form id="subForm" method="post" action="/api/subscribe">
-      <input type="email" name="email" placeholder="留个邮箱" autocomplete="email" required>
-      <button type="submit">订阅</button>
-    </form>
-    <p id="subNote" style="width:100%;font-size:12px;color:var(--muted)"></p>
-  </section>
-
   <footer class="foot">
     <span>一纸书房 · dolow.dev</span>
     <span>价格数据来自各厂官方定价页 · <a href="/toolbox/">工具箱</a></span>
   </footer>
 </main>
 
-<script>
-(function(){
-  var f=document.getElementById('subForm'), n=document.getElementById('subNote');
-  if(!f) return;
-  f.addEventListener('submit', async function(e){
-    e.preventDefault();
-    var email=f.email.value.trim(); if(!email) return;
-    var btn=f.querySelector('button'); btn.disabled=true;
-    try{
-      var r=await fetch('/api/subscribe',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:email,from:location.pathname})});
-      var d=await r.json();
-      if(d.ok){ f.style.display='none'; n.textContent=d.duplicate?'这个邮箱已经记下了':'记下了，有新东西时告诉你'; }
-      else { n.textContent=d.error==='invalid_email'?'邮箱格式不对':'稍后再试'; btn.disabled=false; }
-    }catch(err){ n.textContent='网络不太行，稍后再试'; btn.disabled=false; }
-  });
-})();
-</script>
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>

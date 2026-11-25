@@ -95,34 +95,38 @@ async function checkToolsLayout(tag, expectThumbW, send, expectedHrefs = AI_HREF
     `${tag} ${n} 个 SVG 正常`, JSON.stringify(L.svgs));
 }
 
-// 页头三按钮断言：计算器 / 工具箱 / 订阅更新
+// 页头两按钮断言：计算器 / 工具箱（订阅已移除，位置不变）
 async function checkNav(tag, expectBox, send) {
   const N = await ev(send, `JSON.stringify([...document.querySelectorAll('.nav a')].map(a=>({t:a.textContent.trim(),h:a.getAttribute('href'),box:a.classList.contains('box')})))`);
   const nav = JSON.parse(N);
-  check(JSON.stringify(nav.map(x => x.t)) === JSON.stringify(['计算器', '工具箱', '订阅更新']),
-    `${tag} 页头三按钮文案`, JSON.stringify(nav.map(x => x.t)));
-  check(JSON.stringify(nav.map(x => x.h)) === JSON.stringify(['/tools/', '/toolbox/', '#subscribe']),
-    `${tag} 三按钮 href`, JSON.stringify(nav.map(x => x.h)));
+  check(JSON.stringify(nav.map(x => x.t)) === JSON.stringify(['计算器', '工具箱']),
+    `${tag} 页头只有计算器/工具箱两按钮`, JSON.stringify(nav.map(x => x.t)));
+  check(JSON.stringify(nav.map(x => x.h)) === JSON.stringify(['/tools/', '/toolbox/']),
+    `${tag} 两按钮 href 精确`, JSON.stringify(nav.map(x => x.h)));
   check(nav.filter(x => x.box).length === 1, `${tag} 且仅有一个高亮当前项`, JSON.stringify(nav.filter(x => x.box).map(x => x.t)));
   check(nav.find(x => x.box)?.t === expectBox, `${tag} 高亮的是当前页「${expectBox}」`, nav.find(x => x.box)?.t);
 }
 
-// 订阅区 + 表单契约断言（两页共用：锚点目标存在 + 表单能真提交）
-async function checkSubscribe(tag, send) {
-  check(await ev(send, `!!document.getElementById('subscribe')`), `${tag} 订阅区 #subscribe 存在`);
-  const F = JSON.parse(await ev(send, `(() => {
-    const f = document.getElementById('subForm');
-    const src = [...document.scripts].map(s => s.textContent).join('\\n');
+// 反向断言：订阅入口彻底移除（导航/锚点/表单/脚本文案/CSS 全都不许残留）
+async function checkNoSubscribe(tag, send) {
+  const S = JSON.parse(await ev(send, `(() => {
+    const src = document.documentElement.outerHTML;
+    let cssLeft = false;
+    for (const ss of document.styleSheets) {
+      try { if ([...ss.cssRules].some(r => /^\\.sub\\b/.test(r.selectorText || ''))) cssLeft = true; }
+      catch (e) {}
+    }
     return JSON.stringify({
-      action: f?.getAttribute('action'), method: f?.getAttribute('method'),
-      name: f?.querySelector('input')?.getAttribute('name'),
-      body: src.includes('JSON.stringify({email:email,from:location.pathname})'),
-      ok: src.includes('这个邮箱已经记下了') && src.includes('记下了，有新东西时告诉你'),
-      err: src.includes('邮箱格式不对') && src.includes('稍后再试')
+      anchor: !!document.getElementById('subscribe'),
+      form: !!document.getElementById('subForm') || !!document.querySelector('form[action="/api/subscribe"]'),
+      nav: [...document.querySelectorAll('.nav a')].some(a => a.getAttribute('href') === '#subscribe' || /订阅/.test(a.textContent)),
+      text: /订阅更新|留个邮箱|随时退订|这个邮箱已经记下了/.test(document.body.innerText),
+      script: src.includes('/api/subscribe') || src.includes('subForm') || src.includes('subNote'),
+      css: cssLeft
     });
   })()`));
-  check(F.action === '/api/subscribe' && F.method === 'post' && F.name === 'email' && F.body && F.ok && F.err,
-    `${tag} 订阅表单契约完整`, JSON.stringify(F));
+  check(!S.anchor && !S.form && !S.nav && !S.text && !S.script && !S.css,
+    `${tag} 订阅入口彻底移除`, JSON.stringify(S));
 }
 
 try {
@@ -140,12 +144,12 @@ try {
       if (p === '/tools/') {
         await checkToolsLayout(`${w}px AI`, 64, send);
         await checkNav(`${w}px AI`, '计算器', send);
-        await checkSubscribe(`${w}px AI`, send);
+        await checkNoSubscribe(`${w}px AI`, send);
       }
       if (p === '/toolbox/') {
         await checkToolsLayout(`${w}px 工具箱`, 64, send, ['/fate/', '/daily/', '/he/']);
         await checkNav(`${w}px 工具箱`, '工具箱', send);
-        await checkSubscribe(`${w}px 工具箱`, send);
+        await checkNoSubscribe(`${w}px 工具箱`, send);
       }
     }
   }
@@ -156,12 +160,12 @@ try {
   await sleep(500);
   await checkToolsLayout('桌面 AI', 88, send);
   await checkNav('桌面 AI', '计算器', send);
-  await checkSubscribe('桌面 AI', send);
+  await checkNoSubscribe('桌面 AI', send);
   await send('Page.navigate', { url: base + '/toolbox/' });
   await sleep(500);
   await checkToolsLayout('桌面 工具箱', 88, send, ['/fate/', '/daily/', '/he/']);
   await checkNav('桌面 工具箱', '工具箱', send);
-  await checkSubscribe('桌面 工具箱', send);
+  await checkNoSubscribe('桌面 工具箱', send);
 
   // 2) 目标页真实可达（P1-1 核心断言：不是只看 pathname）
   const dest = await fetch(base + '/tools/');
