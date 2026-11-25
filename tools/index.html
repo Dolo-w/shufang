@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 工具列表 · 一纸书房</title>
+<meta name="description" content="一纸书房的 LLM 成本工具集：成本计算器、多轮对话模拟器、用量对账器、价格变动史。四个免费工具，本地计算，数据来自各厂官方定价页。">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#f7f5f0">
+<link rel="canonical" href="https://dolow.dev/tools/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ItemList","name":"一纸书房 AI 工具","description":"LLM 成本核算与对账工具集","numberOfItems":4,"itemListElement":[
+{"@type":"ListItem","position":1,"item":{"@type":"WebApplication","name":"LLM 成本计算器","url":"https://dolow.dev/token-calc/","applicationCategory":"FinanceApplication"}},
+{"@type":"ListItem","position":2,"item":{"@type":"WebApplication","name":"多轮对话成本模拟器","url":"https://dolow.dev/ctx-calc/","applicationCategory":"FinanceApplication"}},
+{"@type":"ListItem","position":3,"item":{"@type":"WebApplication","name":"LLM 用量对账器","url":"https://dolow.dev/usage-audit/","applicationCategory":"FinanceApplication"}},
+{"@type":"ListItem","position":4,"item":{"@type":"WebApplication","name":"LLM 价格变动史","url":"https://dolow.dev/price-history/","applicationCategory":"Dataset"}}
+]}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="一纸书房">
+<meta property="og:title" content="AI 工具列表 · 一纸书房">
+<meta property="og:description" content="四个免费的 LLM 成本工具：算成本、模拟多轮、对账、查价格变动。">
+<meta property="og:url" content="https://dolow.dev/tools/">
+<meta property="og:image" content="https://dolow.dev/assets/og.png">
+<style>
+  :root{
+    --ink:#1a1815; --ink2:#4a443c; --muted:#8b8377; --paper:#f7f5f0; --card:#fff;
+    --line:#e3dfd7; --cinnabar:#a4342a; --cinnabar-lt:#c04838;
+    --sans:system-ui,-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    --mono:ui-monospace,'SFMono-Regular',Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+
+  .top{position:sticky;top:0;z-index:10;background:rgba(247,245,240,.92);
+    backdrop-filter:saturate(140%) blur(10px);border-bottom:1px solid var(--line)}
+  .top-in{max-width:1080px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .brand-seal{width:30px;height:30px;flex:0 0 30px;background:var(--cinnabar);border-radius:4px;
+    display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;place-items:center;
+    color:#f7ecdb;font-family:'Songti SC','SimSun',serif;font-size:11px;line-height:1;transform:rotate(-4deg)}
+  .brand-name{font-family:'Songti SC','SimSun',serif;font-size:17px;letter-spacing:.08em;font-weight:600}
+  .nav{display:flex;align-items:center;gap:8px}
+  .nav a{text-decoration:none;color:var(--ink2);font-size:13px;padding:7px 12px;border:1px solid transparent;border-radius:6px;transition:.18s}
+  .nav a:hover{border-color:var(--line);background:#fff}
+  .nav .box{color:var(--cinnabar)}
+  .nav .box:hover{border-color:rgba(164,52,42,.35);background:rgba(164,52,42,.04)}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .hero{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+  h1{font-family:'Songti SC','SimSun',serif;font-size:40px;letter-spacing:.04em;font-weight:600;margin:14px 0 12px;line-height:1.25}
+  .lead{font-size:15px;color:var(--ink2);max-width:640px;line-height:1.85}
+  .facts{display:flex;flex-wrap:wrap;gap:18px;margin-top:20px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .facts b{color:var(--cinnabar);font-weight:500}
+
+  .sec-head{display:flex;align-items:baseline;gap:12px;padding:44px 0 18px}
+  .sec-head h2{font-family:'Songti SC','SimSun',serif;font-size:22px;font-weight:600;letter-spacing:.06em}
+  .sec-head span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px;padding-bottom:16px}
+  .card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:22px;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative}
+  .card:hover{border-color:#c9bfa9;transform:translateY(-2px);box-shadow:0 10px 28px rgba(40,32,18,.07)}
+  .card .no{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em}
+  .card .ico{width:36px;height:36px;border-radius:7px;background:rgba(164,52,42,.08);color:var(--cinnabar);
+    display:flex;align-items:center;justify-content:center;font-family:'Songti SC','SimSun',serif;font-size:18px;margin:14px 0 12px}
+  .card h3{font-size:16px;font-weight:600;letter-spacing:.02em;margin-bottom:7px}
+  .card p{font-size:13px;color:var(--ink2);line-height:1.72}
+  .card .path{display:block;margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--cinnabar)}
+
+  .sub{margin:56px 0 40px;padding:24px;border:1px solid var(--line);border-radius:10px;background:#fff;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .sub h2{font-family:'Songti SC','SimSun',serif;font-size:18px;font-weight:600}
+  .sub p{font-size:12px;color:var(--muted);margin-top:4px}
+  .sub form{display:flex;gap:8px;flex-wrap:wrap}
+  .sub input{border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-family:inherit;font-size:13px;
+    width:220px;outline:none;background:var(--paper)}
+  .sub input:focus{border-color:var(--cinnabar)}
+  .sub button{border:0;background:var(--cinnabar);color:#fff;border-radius:6px;padding:0 20px;
+    font-family:inherit;font-size:13px;cursor:pointer;transition:background .2s}
+  .sub button:hover{background:var(--cinnabar-lt)}
+
+  .foot{border-top:1px solid var(--line);padding:24px 0 40px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    font-size:12px;color:var(--muted)}
+  .foot a{color:var(--muted)}
+
+  @media(max-width:600px){
+    h1{font-size:31px}
+    .top-in{padding:12px 16px}
+    .wrap{padding:0 16px}
+    .hero{padding:44px 0 32px}
+    .nav a{padding:7px 9px;font-size:12px}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="/" aria-label="返回一纸书房首页">
+      <span class="brand-seal"><span>一</span><span>纸</span><span>书</span><span>房</span></span>
+      <span class="brand-name">一纸书房</span>
+    </a>
+    <nav class="nav">
+      <a class="box" href="/toolbox/">工具箱</a>
+      <a href="#subscribe">订阅更新</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">LLM cost toolkit · 一纸书房</div>
+    <h1>把 LLM 账单算清楚</h1>
+    <p class="lead">四个免费工具，覆盖预算测算、多轮模拟、用量对账与价格追溯。数据来自各厂官方定价页，全部在浏览器本地计算，无需注册。</p>
+    <div class="facts">
+      <span><b>22</b> 个模型</span>
+      <span><b>o200k</b> 精确计数</span>
+      <span><b>0</b> 注册门槛</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>架上之算</h2><span>04 tools · 本地运行</span></div>
+    <div class="grid">
+      <a class="card" href="/token-calc/">
+        <span class="no">01 / COST</span>
+        <span class="ico">算</span>
+        <h3>LLM 成本计算器</h3>
+        <p>输入 token 用量与调用次数，对比 GPT、Claude、DeepSeek 等主流模型的价格与每月成本，支持缓存命中与 Batch 折扣。</p>
+        <span class="path">/token-calc/</span>
+      </a>
+      <a class="card" href="/ctx-calc/">
+        <span class="no">02 / CONTEXT</span>
+        <span class="ico">轮</span>
+        <h3>多轮对话成本模拟器</h3>
+        <p>Agent 每轮重发全部上下文，账单滚雪球。模拟整段对话成本，看看缓存能省下多少。</p>
+        <span class="path">/ctx-calc/</span>
+      </a>
+      <a class="card" href="/usage-audit/">
+        <span class="no">03 / AUDIT</span>
+        <span class="ico">账</span>
+        <h3>LLM 用量对账器</h3>
+        <p>粘贴 usage 或账单 CSV，按模型汇总 token 用量，核对差异、标出异常扣费。数据不出浏览器。</p>
+        <span class="path">/usage-audit/</span>
+      </a>
+      <a class="card" href="/price-history/">
+        <span class="no">04 / HISTORY</span>
+        <span class="ico">价</span>
+        <h3>LLM 价格变动史</h3>
+        <p>追踪各家大模型 API 的涨价、降价与促销截止，只记录有官方出处的调整，可追溯不编造。</p>
+        <span class="path">/price-history/</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="sub" id="subscribe">
+    <div>
+      <h2>订阅更新</h2>
+      <p>有新的价格变动或工具上线时，捎一封信给你。不发广告，随时退订。</p>
+    </div>
+    <form id="subForm" method="post" action="/api/subscribe">
+      <input type="email" name="email" placeholder="留个邮箱" autocomplete="email" required>
+      <button type="submit">订阅</button>
+    </form>
+    <p id="subNote" style="width:100%;font-size:12px;color:var(--muted)"></p>
+  </section>
+
+  <footer class="foot">
+    <span>一纸书房 · dolow.dev</span>
+    <span>价格数据来自各厂官方定价页 · <a href="/toolbox/">工具箱</a></span>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var f=document.getElementById('subForm'), n=document.getElementById('subNote');
+  if(!f) return;
+  f.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var email=f.email.value.trim(); if(!email) return;
+    var btn=f.querySelector('button'); btn.disabled=true;
+    try{
+      var r=await fetch('/api/subscribe',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:email,from:location.pathname})});
+      var d=await r.json();
+      if(d.ok){ f.style.display='none'; n.textContent=d.duplicate?'这个邮箱已经记下了':'记下了，有新东西时告诉你'; }
+      else { n.textContent=d.error==='invalid_email'?'邮箱格式不对':'稍后再试'; btn.disabled=false; }
+    }catch(err){ n.textContent='网络不太行，稍后再试'; btn.disabled=false; }
+  });
+})();
+</script>
+<script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
+</body>
+</html>

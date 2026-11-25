@@ -4,6 +4,18 @@
 /
   Cache-Control: public, max-age=0, must-revalidate
 
+/tools/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/tools
+  Cache-Control: public, max-age=0, must-revalidate
+
+/toolbox/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/toolbox
+  Cache-Control: public, max-age=0, must-revalidate
+
 /fate/
   Cache-Control: public, max-age=0, must-revalidate
 
