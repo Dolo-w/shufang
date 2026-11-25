@@ -43,7 +43,7 @@
     display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;place-items:center;
     color:#f7ecdb;font-family:'Songti SC','SimSun',serif;font-size:11px;line-height:1;transform:rotate(-4deg)}
   .brand-name{font-family:'Songti SC','SimSun',serif;font-size:17px;letter-spacing:.08em;font-weight:600}
-  .nav{display:flex;align-items:center;gap:8px}
+  .nav{display:flex;align-items:center;gap:6px}
   .nav a{text-decoration:none;color:var(--ink2);font-size:13px;padding:7px 12px;border:1px solid transparent;border-radius:6px;transition:.18s}
   .nav a:hover{border-color:var(--line);background:#fff}
   .nav .box{color:var(--cinnabar);border-color:rgba(164,52,42,.28);background:rgba(164,52,42,.05)}
@@ -52,28 +52,41 @@
   .hero{padding:60px 0 36px;border-bottom:1px solid var(--line)}
   .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
   h1{font-family:'Songti SC','SimSun',serif;font-size:38px;letter-spacing:.04em;font-weight:600;margin:14px 0 12px;line-height:1.25}
-  .lead{font-size:15px;color:var(--ink2);max-width:660px;line-height:1.85}
-  .note{margin-top:18px;padding:12px 16px;border-left:2px solid var(--cinnabar);background:rgba(164,52,42,.04);
-    font-size:13px;color:var(--ink2);max-width:660px;line-height:1.75}
+  .lead{font-size:15px;color:var(--ink2);max-width:680px;line-height:1.85}
+  .lead a{color:var(--cinnabar);text-decoration:none;border-bottom:1px solid rgba(164,52,42,.3)}
 
   .sec-head{display:flex;align-items:baseline;gap:12px;padding:40px 0 18px}
   .sec-head h2{font-family:'Songti SC','SimSun',serif;font-size:21px;font-weight:600;letter-spacing:.06em}
   .sec-head span{font-family:var(--mono);font-size:12px;color:var(--muted)}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px;padding-bottom:16px}
-  .card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);
-    border-radius:10px;padding:22px;transition:border-color .2s,transform .2s,box-shadow .2s}
-  .card:hover{border-color:#d3bda0;transform:translateY(-2px);box-shadow:0 10px 28px rgba(60,36,18,.07)}
+  .grid{display:flex;flex-direction:column;gap:12px;padding-bottom:16px}
+  .card{display:flex;align-items:center;gap:20px;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:16px 20px;transition:border-color .2s,transform .2s,box-shadow .2s}
+  .card:hover{border-color:#d3bda0;transform:translateX(3px);box-shadow:0 8px 24px rgba(60,36,18,.07)}
+  .card .thumb{width:88px;height:88px;flex:0 0 88px;border-radius:9px;background:rgba(164,52,42,.055);
+    display:flex;align-items:center;justify-content:center;color:var(--cinnabar)}
+  .card .thumb svg{display:block}
+  .card .body{min-width:0;flex:1}
   .card .no{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em}
-  .card .ico{width:36px;height:36px;border-radius:7px;background:rgba(164,52,42,.09);color:var(--cinnabar);
-    display:flex;align-items:center;justify-content:center;font-family:'Songti SC','SimSun',serif;font-size:18px;margin:14px 0 12px}
-  .card h3{font-size:16px;font-weight:600;letter-spacing:.02em;margin-bottom:7px}
+  .card h3{font-size:16px;font-weight:600;letter-spacing:.02em;margin:4px 0 5px}
   .card h3 .tag{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:10px;font-family:var(--sans);
     font-size:10px;font-weight:400;color:var(--muted);background:var(--paper);border:1px solid var(--line);vertical-align:2px}
-  .card p{font-size:13px;color:var(--ink2);line-height:1.72}
-  .card .path{display:block;margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--cinnabar)}
+  .card p{font-size:13px;color:var(--ink2);line-height:1.68;max-width:720px}
+  .card .path{display:block;margin-top:7px;font-family:var(--mono);font-size:11px;color:var(--cinnabar)}
 
-  .back{display:inline-flex;align-items:center;gap:8px;margin:28px 0 44px;padding:9px 16px;
+  .sub{margin:44px 0 32px;padding:24px;border:1px solid var(--line);border-radius:10px;background:#fff;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .sub h2{font-family:'Songti SC','SimSun',serif;font-size:18px;font-weight:600}
+  .sub p{font-size:12px;color:var(--muted);margin-top:4px}
+  .sub form{display:flex;gap:8px;flex-wrap:wrap}
+  .sub input{border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-family:inherit;font-size:13px;
+    width:220px;outline:none;background:var(--paper)}
+  .sub input:focus{border-color:var(--cinnabar)}
+  .sub button{border:0;background:var(--cinnabar);color:#fff;border-radius:6px;padding:0 20px;
+    font-family:inherit;font-size:13px;cursor:pointer;transition:background .2s}
+  .sub button:hover{background:var(--cinnabar-lt)}
+
+  .back{display:inline-flex;align-items:center;gap:8px;margin:0 0 40px;padding:9px 16px;
     border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink2);
     text-decoration:none;font-size:13px;transition:border-color .2s}
   .back:hover{border-color:var(--cinnabar);color:var(--cinnabar)}
@@ -88,6 +101,10 @@
     .wrap{padding:0 16px}
     .hero{padding:44px 0 30px}
     .nav a{padding:7px 9px;font-size:12px}
+    .card{gap:13px;padding:13px 14px}
+    .card .thumb{width:64px;height:64px;flex-basis:64px}
+    .card .thumb svg{width:40px;height:40px}
+    .card h3{font-size:15px}
   }
 </style>
 </head>
@@ -100,8 +117,9 @@
       <span class="brand-name">一纸书房</span>
     </a>
     <nav class="nav">
-      <span class="box">工具箱</span>
-      <a href="/tools/">AI 工具</a>
+      <a href="/tools/">计算器</a>
+      <a class="box" href="/toolbox/">工具箱</a>
+      <a href="#subscribe">订阅更新</a>
     </nav>
   </div>
 </header>
@@ -110,45 +128,85 @@
   <section class="hero">
     <div class="eyebrow">toolbox · 一纸书房</div>
     <h1>工具箱</h1>
-    <p class="lead">几样 early days 做的小玩意，放在这里。主线在 AI 工具那边，这几样仍然能用，也一直有人用。</p>
-    <div class="note">这里的东西更像玩具：图一乐、可分享，不承载正经的数据工作。如果你要算 LLM 账单，请去 AI 工具区。</div>
+    <p class="lead">几样 early days 做的国风小工具，图一乐、可分享。主线在 <a href="/tools/">计算器</a> 那边，这几样仍然能用，也一直有人用。</p>
   </section>
 
   <section>
     <div class="sec-head"><h2>架上之笺</h2><span>03 toys · 仍然可用</span></div>
     <div class="grid">
       <a class="card" href="/fate/">
-        <span class="no">TOY 01</span>
-        <span class="ico">笺</span>
-        <h3>一纸命笺 <span class="tag">实验性</span></h3>
-        <p>干支五行命书生成。输入生辰，落笺四柱五行、大运流年与断语，可存图分享。</p>
-        <span class="path">/fate/</span>
+        <span class="thumb" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 7h20v34l-5-3-5 3-5-3-5 3z"/><path d="M19 15h10M19 20h10M19 25h7"/></svg>
+        </span>
+        <span class="body">
+          <span class="no">TOY 01</span>
+          <h3>一纸命笺 <span class="tag">实验性</span></h3>
+          <p>干支五行命书生成。输入生辰，落笺四柱五行、大运流年与断语，可存图分享。</p>
+          <span class="path">/fate/</span>
+        </span>
       </a>
       <a class="card" href="/daily/">
-        <span class="no">TOY 02</span>
-        <span class="ico">签</span>
-        <h3>一纸日签 <span class="tag">实验性</span></h3>
-        <p>按你的生辰与今日干支，出今日一签：宜什么、忌什么。</p>
-        <span class="path">/daily/</span>
+        <span class="thumb" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="11" y="8" width="26" height="32" rx="3"/><path d="M11 17h26M18 6v5M30 6v5"/><path d="M17 25h14M17 31h10"/></svg>
+        </span>
+        <span class="body">
+          <span class="no">TOY 02</span>
+          <h3>一纸日签 <span class="tag">实验性</span></h3>
+          <p>按你的生辰与今日干支，出今日一签：宜什么、忌什么。</p>
+          <span class="path">/daily/</span>
+        </span>
       </a>
       <a class="card" href="/he/">
-        <span class="no">TOY 03</span>
-        <span class="ico">合</span>
-        <h3>一纸合婚 <span class="tag">实验性</span></h3>
-        <p>两人生辰合成一笺：日柱合冲、五行互补、相处提示。</p>
-        <span class="path">/he/</span>
+        <span class="thumb" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="19" cy="24" r="10"/><circle cx="29" cy="24" r="10"/><path d="M24 17v14"/></svg>
+        </span>
+        <span class="body">
+          <span class="no">TOY 03</span>
+          <h3>一纸合婚 <span class="tag">实验性</span></h3>
+          <p>两人生辰合成一笺：日柱合冲、五行互补、相处提示。</p>
+          <span class="path">/he/</span>
+        </span>
       </a>
     </div>
   </section>
 
-  <a class="back" href="/tools/">返回 AI 工具</a>
+  <section class="sub" id="subscribe">
+    <div>
+      <h2>订阅更新</h2>
+      <p>有新的工具上线时，捎一封信给你。不发广告，随时退订。</p>
+    </div>
+    <form id="subForm" method="post" action="/api/subscribe">
+      <input type="email" name="email" placeholder="留个邮箱" autocomplete="email" required>
+      <button type="submit">订阅</button>
+    </form>
+    <p id="subNote" style="width:100%;font-size:12px;color:var(--muted)"></p>
+  </section>
+
+  <a class="back" href="/tools/">返回计算器</a>
 
   <footer class="foot">
     <span>一纸书房 · dolow.dev</span>
-    <span>想算成本？<a href="/tools/">去 AI 工具区</a></span>
+    <span>想算成本？<a href="/tools/">去计算器</a></span>
   </footer>
 </main>
 
+<script>
+(function(){
+  var f=document.getElementById('subForm'), n=document.getElementById('subNote');
+  if(!f) return;
+  f.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var email=f.email.value.trim(); if(!email) return;
+    var btn=f.querySelector('button'); btn.disabled=true;
+    try{
+      var r=await fetch('/api/subscribe',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:email,from:location.pathname})});
+      var d=await r.json();
+      if(d.ok){ f.style.display='none'; n.textContent=d.duplicate?'这个邮箱已经记下了':'记下了，有新东西时告诉你'; }
+      else { n.textContent=d.error==='invalid_email'?'邮箱格式不对':'稍后再试'; btn.disabled=false; }
+    }catch(err){ n.textContent='网络不太行，稍后再试'; btn.disabled=false; }
+  });
+})();
+</script>
 <script>if(!navigator.doNotTrack||navigator.doNotTrack!=='1'){try{navigator.sendBeacon('/api/hit',JSON.stringify({p:location.pathname}))}catch(e){}}</script>
 </body>
 </html>

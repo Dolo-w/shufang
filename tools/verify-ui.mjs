@@ -57,8 +57,10 @@ let fail = 0;
 const check = (ok, label, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} ${label}${extra ? ' | ' + extra : ''}`); if (!ok) fail++; };
 const ev = async (send, expr) => (await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true })).result?.result?.value;
 
-// /tools/ 横排结构断言（堵三类回归：退回 grid / href 改错 / 图标挪到右边）
-async function checkToolsLayout(tag, expectThumbW, send) {
+// 横排结构断言（堵三类回归：退回 grid / href 改错 / 图标挪到右边）
+// 默认四个 AI 工具；工具箱页传 3 个 href 复用
+const AI_HREFS = ['/token-calc/', '/ctx-calc/', '/usage-audit/', '/price-history/'];
+async function checkToolsLayout(tag, expectThumbW, send, expectedHrefs = AI_HREFS) {
   const L = await ev(send, `(() => {
     const g = document.querySelector('.grid'), s = g ? getComputedStyle(g) : {};
     const cards = [...document.querySelectorAll('.grid .card')];
@@ -80,16 +82,47 @@ async function checkToolsLayout(tag, expectThumbW, send) {
       }))
     };
   })()`);
+  const n = expectedHrefs.length;
   check(L.display === 'flex' && L.dir === 'column', `${tag} .grid 纵向 flex`, `${L.display}/${L.dir}`);
-  check(L.cards.length === 4, `${tag} 四个工具卡`, `n=${L.cards.length}`);
-  check(JSON.stringify(L.cards.map(c => c.href)) === JSON.stringify(['/token-calc/', '/ctx-calc/', '/usage-audit/', '/price-history/']),
-    `${tag} 四卡 href 精确`, JSON.stringify(L.cards.map(c => c.href)));
+  check(L.cards.length === n, `${tag} ${n} 个工具卡`, `n=${L.cards.length}`);
+  check(JSON.stringify(L.cards.map(c => c.href)) === JSON.stringify(expectedHrefs),
+    `${tag} 卡 href 精确`, JSON.stringify(L.cards.map(c => c.href)));
   check(L.cards.every((c, i) => i === 0 || (c.top > L.cards[i-1].top && Math.abs(c.left - L.cards[0].left) < 1)),
-    `${tag} 四卡垂直堆叠左对齐`, JSON.stringify(L.cards.map(c => [c.top, c.left])));
+    `${tag} 卡片垂直堆叠左对齐`, JSON.stringify(L.cards.map(c => [c.top, c.left])));
   check(L.cards.every(c => c.leftOk), `${tag} 图标在文字左侧`, JSON.stringify(L.cards.map(c => c.leftOk)));
   check(L.cards.every(c => Math.abs(c.thumbW - expectThumbW) < 0.6), `${tag} 图标宽 ${expectThumbW}px`, JSON.stringify(L.cards.map(c => c.thumbW)));
-  check(L.svgs.length === 4 && L.svgs.every(s => s.vb === '0 0 48 48' && s.stroke === 'rgb(164, 52, 42)' && s.pathOk),
-    `${tag} 四个 SVG 正常`, JSON.stringify(L.svgs));
+  check(L.svgs.length === n && L.svgs.every(s => s.vb === '0 0 48 48' && s.stroke === 'rgb(164, 52, 42)' && s.pathOk),
+    `${tag} ${n} 个 SVG 正常`, JSON.stringify(L.svgs));
+}
+
+// 页头三按钮断言：计算器 / 工具箱 / 订阅更新
+async function checkNav(tag, expectBox, send) {
+  const N = await ev(send, `JSON.stringify([...document.querySelectorAll('.nav a')].map(a=>({t:a.textContent.trim(),h:a.getAttribute('href'),box:a.classList.contains('box')})))`);
+  const nav = JSON.parse(N);
+  check(JSON.stringify(nav.map(x => x.t)) === JSON.stringify(['计算器', '工具箱', '订阅更新']),
+    `${tag} 页头三按钮文案`, JSON.stringify(nav.map(x => x.t)));
+  check(JSON.stringify(nav.map(x => x.h)) === JSON.stringify(['/tools/', '/toolbox/', '#subscribe']),
+    `${tag} 三按钮 href`, JSON.stringify(nav.map(x => x.h)));
+  check(nav.filter(x => x.box).length === 1, `${tag} 且仅有一个高亮当前项`, JSON.stringify(nav.filter(x => x.box).map(x => x.t)));
+  check(nav.find(x => x.box)?.t === expectBox, `${tag} 高亮的是当前页「${expectBox}」`, nav.find(x => x.box)?.t);
+}
+
+// 订阅区 + 表单契约断言（两页共用：锚点目标存在 + 表单能真提交）
+async function checkSubscribe(tag, send) {
+  check(await ev(send, `!!document.getElementById('subscribe')`), `${tag} 订阅区 #subscribe 存在`);
+  const F = JSON.parse(await ev(send, `(() => {
+    const f = document.getElementById('subForm');
+    const src = [...document.scripts].map(s => s.textContent).join('\\n');
+    return JSON.stringify({
+      action: f?.getAttribute('action'), method: f?.getAttribute('method'),
+      name: f?.querySelector('input')?.getAttribute('name'),
+      body: src.includes('JSON.stringify({email:email,from:location.pathname})'),
+      ok: src.includes('这个邮箱已经记下了') && src.includes('记下了，有新东西时告诉你'),
+      err: src.includes('邮箱格式不对') && src.includes('稍后再试')
+    });
+  })()`));
+  check(F.action === '/api/subscribe' && F.method === 'post' && F.name === 'email' && F.body && F.ok && F.err,
+    `${tag} 订阅表单契约完整`, JSON.stringify(F));
 }
 
 try {
@@ -104,7 +137,16 @@ try {
       await sleep(500);
       const dims = await ev(send, `({w:window.innerWidth,sw:document.documentElement.scrollWidth,bw:document.body.scrollWidth})`);
       check(dims && dims.sw <= dims.w + 1, `${p} @${w}px 无横向溢出`, dims ? `scrollW=${dims.sw} innerW=${dims.w}` : 'no data');
-      if (p === '/tools/') await checkToolsLayout(`${w}px`, 64, send);
+      if (p === '/tools/') {
+        await checkToolsLayout(`${w}px AI`, 64, send);
+        await checkNav(`${w}px AI`, '计算器', send);
+        await checkSubscribe(`${w}px AI`, send);
+      }
+      if (p === '/toolbox/') {
+        await checkToolsLayout(`${w}px 工具箱`, 64, send, ['/fate/', '/daily/', '/he/']);
+        await checkNav(`${w}px 工具箱`, '工具箱', send);
+        await checkSubscribe(`${w}px 工具箱`, send);
+      }
     }
   }
 
@@ -112,7 +154,14 @@ try {
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url: base + '/tools/' });
   await sleep(500);
-  await checkToolsLayout('桌面', 88, send);
+  await checkToolsLayout('桌面 AI', 88, send);
+  await checkNav('桌面 AI', '计算器', send);
+  await checkSubscribe('桌面 AI', send);
+  await send('Page.navigate', { url: base + '/toolbox/' });
+  await sleep(500);
+  await checkToolsLayout('桌面 工具箱', 88, send, ['/fate/', '/daily/', '/he/']);
+  await checkNav('桌面 工具箱', '工具箱', send);
+  await checkSubscribe('桌面 工具箱', send);
 
   // 2) 目标页真实可达（P1-1 核心断言：不是只看 pathname）
   const dest = await fetch(base + '/tools/');
